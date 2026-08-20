@@ -1,0 +1,2442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport"
+content="width=device-width,initial-scale=1.0">
+
+<title>Smart School Bus</title>
+
+<link rel="stylesheet"
+href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+
+<script
+src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js">
+</script>
+
+<style>
+
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+    font-family:Arial,sans-serif;
+}
+
+body{
+    background:#eef4ff;
+    color:#17243d;
+}
+
+button{
+    border:0;
+    padding:12px 16px;
+    border-radius:10px;
+    background:#1264f5;
+    color:white;
+    font-weight:bold;
+    cursor:pointer;
+    margin-top:8px;
+}
+
+button:hover{
+    background:#0754d5;
+}
+
+.red{
+    background:#e83447;
+}
+
+.green{
+    background:#20a95a;
+}
+
+.orange{
+    background:#f39a16;
+}
+
+.hidden{
+    display:none!important;
+}
+
+/* LOGIN */
+
+.login-screen{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    background:
+    linear-gradient(
+        135deg,
+        #1264f5,
+        #70a9ff
+    );
+}
+
+.login-box{
+    background:white;
+    width:390px;
+    max-width:92%;
+    padding:30px;
+    border-radius:22px;
+    box-shadow:0 15px 45px #0004;
+}
+
+.logo{
+    text-align:center;
+    font-size:55px;
+}
+
+.login-box h1{
+    text-align:center;
+    margin:10px 0 5px;
+}
+
+.subtitle{
+    text-align:center;
+    color:#718097;
+    margin-bottom:25px;
+}
+
+.role-buttons{
+    display:flex;
+    gap:10px;
+    margin-bottom:18px;
+}
+
+.role-buttons button{
+    flex:1;
+}
+
+.role-selected{
+    background:#20a95a!important;
+}
+
+input{
+    width:100%;
+    padding:13px;
+    margin:7px 0;
+    border:1px solid #d5ddeb;
+    border-radius:9px;
+    font-size:15px;
+}
+
+.login-box .login-button{
+    width:100%;
+    margin-top:15px;
+}
+
+.demo{
+    margin-top:18px;
+    background:#f2f6ff;
+    padding:12px;
+    border-radius:10px;
+    font-size:12px;
+    line-height:1.6;
+}
+
+/* HEADER */
+
+header{
+    background:
+    linear-gradient(
+        135deg,
+        #1264f5,
+        #4b91ff
+    );
+
+    color:white;
+
+    padding:17px 24px;
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+}
+
+header h1{
+    font-size:23px;
+}
+
+header p{
+    opacity:.9;
+    margin-top:4px;
+}
+
+.live{
+    background:#20d66b;
+    padding:8px 13px;
+    border-radius:20px;
+    font-weight:bold;
+}
+
+/* MAIN */
+
+.container{
+    max-width:1200px;
+    margin:20px auto;
+    padding:0 16px;
+}
+
+/* CARDS */
+
+.cards{
+    display:grid;
+    grid-template-columns:
+    repeat(4,1fr);
+    gap:15px;
+    margin-bottom:18px;
+}
+
+.card{
+    background:white;
+    padding:18px;
+    border-radius:16px;
+    box-shadow:0 5px 18px #18345b18;
+}
+
+.icon{
+    font-size:27px;
+}
+
+.label{
+    font-size:12px;
+    color:#718097;
+    margin-top:7px;
+}
+
+.value{
+    font-size:20px;
+    font-weight:bold;
+    margin-top:5px;
+}
+
+/* CONTENT */
+
+.content{
+    display:grid;
+    grid-template-columns:2fr 1fr;
+    gap:18px;
+}
+
+.mapbox{
+    background:white;
+    padding:8px;
+    border-radius:18px;
+    box-shadow:0 5px 18px #18345b18;
+}
+
+#map{
+    height:600px;
+    width:100%;
+    border-radius:13px;
+}
+
+.panel{
+    background:white;
+    padding:19px;
+    border-radius:17px;
+    box-shadow:0 5px 18px #18345b18;
+    margin-bottom:15px;
+}
+
+.panel h2{
+    margin-bottom:13px;
+}
+
+.status{
+    padding:11px;
+    background:#e8fff1;
+    color:#079345;
+    border-radius:9px;
+    font-weight:bold;
+}
+
+.info{
+    color:#66758d;
+    font-size:13px;
+    line-height:1.5;
+}
+
+.stop-item{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:9px 0;
+    border-bottom:1px solid #eee;
+}
+
+.number{
+    width:27px;
+    height:27px;
+    border-radius:50%;
+    background:#1264f5;
+    color:white;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:bold;
+}
+
+.stop-name{
+    flex:1;
+}
+
+footer{
+    text-align:center;
+    color:#69758b;
+    padding:25px;
+}
+
+/* MOBILE */
+
+@media(max-width:850px){
+
+    .cards{
+        grid-template-columns:
+        repeat(2,1fr);
+    }
+
+    .content{
+        grid-template-columns:1fr;
+    }
+
+    #map{
+        height:450px;
+    }
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+
+<!-- =================================================
+     LOGIN
+================================================= -->
+
+<div
+id="loginScreen"
+class="login-screen">
+
+<div class="login-box">
+
+<div class="logo">
+🚌
+</div>
+
+<h1>
+Smart School Bus
+</h1>
+
+<p class="subtitle">
+School Transport Management
+</p>
+
+
+<div class="role-buttons">
+
+<button
+id="studentRole"
+onclick="selectRole('student')">
+
+🧑‍🎓 Student
+
+</button>
+
+<button
+id="driverRole"
+onclick="selectRole('driver')">
+
+🧑‍✈️ Driver
+
+</button>
+
+</div>
+
+
+<input
+id="username"
+placeholder="Username">
+
+
+<input
+id="password"
+type="password"
+placeholder="Password">
+
+
+<button
+class="login-button"
+onclick="login()">
+
+🔐 Login
+
+</button>
+
+
+<p
+id="loginMessage"
+style="
+color:#e83447;
+font-size:13px;
+margin-top:10px;
+text-align:center;
+">
+</p>
+
+
+<div class="demo">
+
+<strong>Exhibition Demo Accounts</strong>
+
+<br>
+
+🧑‍✈️ Driver:
+driver01 / 1234
+
+<br>
+
+🧑‍🎓 Student:
+student01 / 1234
+
+</div>
+
+</div>
+
+</div>
+
+
+<!-- =================================================
+     APP
+================================================= -->
+
+<div
+id="app"
+class="hidden">
+
+
+<header>
+
+<div>
+
+<h1>
+🚌 Smart School Bus
+</h1>
+
+<p id="headerSubtitle">
+School Transport System
+</p>
+
+</div>
+
+<div>
+
+<span class="live">
+● LIVE
+</span>
+
+<button
+onclick="logout()"
+style="
+background:#ffffff22;
+margin-left:7px;
+">
+
+Logout
+
+</button>
+
+</div>
+
+</header>
+
+
+<div class="container">
+
+
+<!-- =================================================
+     DRIVER DASHBOARD
+================================================= -->
+
+<div
+id="driverDashboard"
+class="hidden">
+
+
+<div class="cards">
+
+
+<div class="card">
+
+<div class="icon">
+🚌
+</div>
+
+<div class="label">
+BUS
+</div>
+
+<div class="value">
+BUS-08
+</div>
+
+</div>
+
+
+<div class="card">
+
+<div class="icon">
+📍
+</div>
+
+<div class="label">
+STOPS
+</div>
+
+<div
+class="value"
+id="driverStops">
+
+0
+
+</div>
+
+</div>
+
+
+<div class="card">
+
+<div class="icon">
+🛰️
+</div>
+
+<div class="label">
+GPS
+</div>
+
+<div
+class="value"
+id="gpsStatus">
+
+OFF
+
+</div>
+
+</div>
+
+
+<div class="card">
+
+<div class="icon">
+👥
+</div>
+
+<div class="label">
+STUDENTS
+</div>
+
+<div class="value">
+32/40
+</div>
+
+</div>
+
+</div>
+
+
+<div class="content">
+
+
+<div class="mapbox">
+
+<div id="driverMap"
+style="
+height:600px;
+border-radius:13px;
+">
+</div>
+
+</div>
+
+
+<div>
+
+
+<div class="panel">
+
+<h2>
+🧑‍✈️ Driver Control
+</h2>
+
+<p>
+<strong>
+Driver:
+</strong>
+Mr. Sharma
+</p>
+
+<p style="margin-top:8px">
+<strong>
+Bus:
+</strong>
+BUS-08
+</p>
+
+
+<div
+id="driverStatus"
+class="status"
+style="margin-top:14px">
+
+● Trip not started
+
+</div>
+
+
+<button
+class="green"
+onclick="startDriverGPS()">
+
+🟢 Start Trip
+
+</button>
+
+
+<button
+onclick="centerDriver()">
+
+🎯 Find Bus
+
+</button>
+
+
+<button
+class="red"
+onclick="driverEmergency()">
+
+🚨 Emergency
+
+</button>
+
+
+<button
+class="orange"
+onclick="stopDriverGPS()">
+
+🔴 End Trip
+
+</button>
+
+</div>
+
+
+<div class="panel">
+
+<h2>
+📍 Route Setup
+</h2>
+
+<p class="info">
+
+Click on the map to create stops.
+
+<br><br>
+
+Each stop will be added to the route.
+
+</p>
+
+
+<button
+onclick="addDriverStop()">
+
+➕ Add Stop
+
+</button>
+
+
+<button
+onclick="saveDriverRoute()">
+
+💾 Save Route
+
+</button>
+
+
+<button
+onclick="loadDriverRoute()">
+
+📂 Load Route
+
+</button>
+
+</div>
+
+
+<div class="panel">
+
+<h2>
+📍 Stops
+</h2>
+
+<div id="driverStopList">
+
+<p class="info">
+No stops yet.
+</p>
+
+</div>
+
+</div>
+
+
+</div>
+
+</div>
+
+</div>
+
+
+<!-- =================================================
+     STUDENT DASHBOARD
+================================================= -->
+
+<div
+id="studentDashboard"
+class="hidden">
+
+
+<div class="cards">
+
+
+<div class="card">
+
+<div class="icon">
+🚌
+</div>
+
+<div class="label">
+BUS
+</div>
+
+<div
+class="value">
+BUS-08
+</div>
+
+</div>
+
+
+<div class="card">
+
+<div class="icon">
+🟢
+</div>
+
+<div class="label">
+STATUS
+</div>
+
+<div
+class="value"
+id="studentBusStatus">
+
+Waiting
+
+</div>
+
+</div>
+
+
+<div class="card">
+
+<div class="icon">
+📍
+</div>
+
+<div class="label">
+MY STOP
+</div>
+
+<div
+class="value">
+
+My Stop
+
+</div>
+
+</div>
+
+
+<div class="card">
+
+<div class="icon">
+⏱️
+</div>
+
+<div class="label">
+DISTANCE
+</div>
+
+<div
+class="value"
+id="studentDistance">
+
+-
+
+</div>
+
+</div>
+
+</div>
+
+
+<div class="content">
+
+
+<div class="mapbox">
+
+<div id="studentMap"
+style="
+height:600px;
+border-radius:13px;
+">
+</div>
+
+</div>
+
+
+<div>
+
+
+<div class="panel">
+
+<h2>
+🧑‍🎓 Student Dashboard
+</h2>
+
+<p>
+<strong>
+Student:
+</strong>
+Rahul
+</p>
+
+<p style="margin-top:8px">
+<strong>
+Class:
+</strong>
+8
+</p>
+
+
+<div
+class="status"
+style="margin-top:15px"
+id="studentStatus">
+
+● Waiting for bus
+
+</div>
+
+<br>
+
+<p>
+<strong>
+Next Stop:
+</strong>
+</p>
+
+<p
+id="studentNextStop"
+style="
+margin-top:7px;
+font-weight:bold;
+">
+
+-
+
+</p>
+
+
+<p style="margin-top:15px">
+
+<strong>
+Bus Distance:
+</strong>
+
+</p>
+
+<p
+id="studentBusDistance"
+style="
+margin-top:7px;
+font-weight:bold;
+">
+
+-
+
+</p>
+
+</div>
+
+
+<div class="panel">
+
+<h2>
+📍 My Route
+</h2>
+
+<div
+id="studentStopList">
+
+<p class="info">
+No route loaded.
+</p>
+
+</div>
+
+</div>
+
+
+<div class="panel">
+
+<h2>
+🔔 Alerts
+</h2>
+
+<p
+class="info"
+id="studentNotification">
+
+No new alerts.
+
+</p>
+
+
+<button
+onclick="studentNotify()">
+
+🔔 Enable Alerts
+
+</button>
+
+
+<button
+class="red"
+onclick="studentEmergency()">
+
+🚨 Emergency
+
+</button>
+
+</div>
+
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+
+<footer>
+
+Smart School Bus Tracker
+
+<br>
+
+Class 8 Exhibition Project
+
+<br>
+
+Map data © OpenStreetMap contributors
+
+</footer>
+
+</div>
+
+
+<script>
+
+/* =====================================================
+   GLOBAL DATA
+===================================================== */
+
+
+let selectedRole = null;
+
+let driverMap = null;
+
+let studentMap = null;
+
+let driverBusMarker = null;
+
+let studentBusMarker = null;
+
+let driverAccuracy = null;
+
+let driverGPSWatch = null;
+
+let driverPosition = null;
+
+let stops = [];
+
+let driverMarkers = [];
+
+let studentMarkers = [];
+
+let driverRoute = null;
+
+let studentRoute = null;
+
+
+/* =====================================================
+   ROLE
+===================================================== */
+
+
+function selectRole(role){
+
+    selectedRole=role;
+
+
+    document
+    .getElementById(
+        "studentRole"
+    )
+    .classList
+    .remove(
+        "role-selected"
+    );
+
+
+    document
+    .getElementById(
+        "driverRole"
+    )
+    .classList
+    .remove(
+        "role-selected"
+    );
+
+
+    if(role==="student"){
+
+        document
+        .getElementById(
+            "studentRole"
+        )
+        .classList
+        .add(
+            "role-selected"
+        );
+
+    }
+
+    else{
+
+        document
+        .getElementById(
+            "driverRole"
+        )
+        .classList
+        .add(
+            "role-selected"
+        );
+
+    }
+
+}
+
+
+/* =====================================================
+   LOGIN
+===================================================== */
+
+
+function login(){
+
+    const username =
+    document
+    .getElementById(
+        "username"
+    )
+    .value
+    .trim();
+
+
+    const password =
+    document
+    .getElementById(
+        "password"
+    )
+    .value;
+
+
+    const message =
+    document
+    .getElementById(
+        "loginMessage"
+    );
+
+
+    if(
+        !selectedRole
+    ){
+
+        message.innerText =
+        "Please choose Student or Driver.";
+
+        return;
+
+    }
+
+
+    if(
+        selectedRole==="driver" &&
+        username==="driver01" &&
+        password==="1234"
+    ){
+
+        openDriver();
+
+        return;
+
+    }
+
+
+    if(
+        selectedRole==="student" &&
+        username==="student01" &&
+        password==="1234"
+    ){
+
+        openStudent();
+
+        return;
+
+    }
+
+
+    message.innerText =
+    "❌ Incorrect username or password.";
+
+}
+
+
+/* =====================================================
+   DRIVER
+===================================================== */
+
+
+function openDriver(){
+
+    document
+    .getElementById(
+        "loginScreen"
+    )
+    .classList
+    .add(
+        "hidden"
+    );
+
+
+    document
+    .getElementById(
+        "app"
+    )
+    .classList
+    .remove(
+        "hidden"
+    );
+
+
+    document
+    .getElementById(
+        "driverDashboard"
+    )
+    .classList
+    .remove(
+        "hidden"
+    );
+
+
+    document
+    .getElementById(
+        "studentDashboard"
+    )
+    .classList
+    .add(
+        "hidden"
+    );
+
+
+    document
+    .getElementById(
+        "headerSubtitle"
+    )
+    .innerText =
+    "Driver Control Panel";
+
+
+    setTimeout(
+        initializeDriverMap,
+        200
+    );
+
+}
+
+
+/* =====================================================
+   STUDENT
+===================================================== */
+
+
+function openStudent(){
+
+    document
+    .getElementById(
+        "loginScreen"
+    )
+    .classList
+    .add(
+        "hidden"
+    );
+
+
+    document
+    .getElementById(
+        "app"
+    )
+    .classList
+    .remove(
+        "hidden"
+    );
+
+
+    document
+    .getElementById(
+        "driverDashboard"
+    )
+    .classList
+    .add(
+        "hidden"
+    );
+
+
+    document
+    .getElementById(
+        "studentDashboard"
+    )
+    .classList
+    .remove(
+        "hidden"
+    );
+
+
+    document
+    .getElementById(
+        "headerSubtitle"
+    )
+    .innerText =
+    "Student Bus Tracking";
+
+
+    loadSavedRoute();
+
+
+    setTimeout(
+        initializeStudentMap,
+        200
+    );
+
+}
+
+
+/* =====================================================
+   LOGOUT
+===================================================== */
+
+
+function logout(){
+
+    stopDriverGPS();
+
+
+    document
+    .getElementById(
+        "app"
+    )
+    .classList
+    .add(
+        "hidden"
+    );
+
+
+    document
+    .getElementById(
+        "loginScreen"
+    )
+    .classList
+    .remove(
+        "hidden"
+    );
+
+
+    document
+    .getElementById(
+        "username"
+    )
+    .value="";
+
+
+    document
+    .getElementById(
+        "password"
+    )
+    .value="";
+
+}
+
+
+/* =====================================================
+   DRIVER MAP
+===================================================== */
+
+
+function initializeDriverMap(){
+
+    if(driverMap){
+
+        driverMap.invalidateSize();
+
+        return;
+
+    }
+
+
+    driverMap =
+    L.map(
+        "driverMap"
+    )
+    .setView(
+        [19.4515,73.3265],
+        14
+    );
+
+
+    L.tileLayer(
+
+        "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+
+        {
+
+            maxZoom:19,
+
+            attribution:
+            "© OpenStreetMap contributors"
+
+        }
+
+    )
+    .addTo(driverMap);
+
+
+    driverMap.on(
+        "click",
+        addStopFromMap
+    );
+
+
+    drawDriverStops();
+
+}
+
+
+/* =====================================================
+   STUDENT MAP
+===================================================== */
+
+
+function initializeStudentMap(){
+
+    if(studentMap){
+
+        studentMap.invalidateSize();
+
+        return;
+
+    }
+
+
+    studentMap =
+    L.map(
+        "studentMap"
+    )
+    .setView(
+        [19.4515,73.3265],
+        14
+    );
+
+
+    L.tileLayer(
+
+        "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+
+        {
+
+            maxZoom:19,
+
+            attribution:
+            "© OpenStreetMap contributors"
+
+        }
+
+    )
+    .addTo(studentMap);
+
+
+    drawStudentStops();
+
+
+    updateStudentBus();
+
+}
+
+
+/* =====================================================
+   BUS ICON
+===================================================== */
+
+
+const busIcon =
+L.divIcon({
+
+    html:
+    '<div style="font-size:35px">🚌</div>',
+
+    className:"",
+
+    iconSize:[40,40],
+
+    iconAnchor:[20,20]
+
+});
+
+
+/* =====================================================
+   ADD STOP
+===================================================== */
+
+
+function addStopFromMap(e){
+
+    const name =
+    prompt(
+        "Enter bus stop name:"
+    );
+
+
+    if(!name){
+
+        return;
+
+    }
+
+
+    stops.push({
+
+        name:name,
+
+        lat:e.latlng.lat,
+
+        lng:e.latlng.lng
+
+    });
+
+
+    drawDriverStops();
+
+    drawStudentStops();
+
+    updateStopLists();
+
+    saveRouteAutomatically();
+
+}
+
+
+/* =====================================================
+   ADD STOP BUTTON
+===================================================== */
+
+
+function addDriverStop(){
+
+    alert(
+        "Click anywhere on the map to add a bus stop."
+    );
+
+}
+
+
+/* =====================================================
+   DRAW DRIVER STOPS
+===================================================== */
+
+
+function drawDriverStops(){
+
+    if(!driverMap){
+
+        return;
+
+    }
+
+
+    driverMarkers.forEach(
+        m =>
+        driverMap.removeLayer(m)
+    );
+
+
+    driverMarkers=[];
+
+
+    stops.forEach(
+
+        function(stop,index){
+
+            const marker =
+            L.marker([
+                stop.lat,
+                stop.lng
+            ])
+            .addTo(driverMap);
+
+
+            marker.bindPopup(
+                "<b>🛑 Stop "+
+                (index+1)+
+                "</b><br>"+
+                stop.name
+            );
+
+
+            driverMarkers.push(
+                marker
+            );
+
+        }
+
+    );
+
+
+    if(driverRoute){
+
+        driverMap.removeLayer(
+            driverRoute
+        );
+
+    }
+
+
+    if(stops.length>=2){
+
+        driverRoute =
+        L.polyline(
+
+            stops.map(
+                s =>
+                [s.lat,s.lng]
+            ),
+
+            {
+                color:"#1264f5",
+                weight:6
+            }
+
+        )
+        .addTo(driverMap);
+
+    }
+
+}
+
+
+/* =====================================================
+   DRAW STUDENT STOPS
+===================================================== */
+
+
+function drawStudentStops(){
+
+    if(!studentMap){
+
+        return;
+
+    }
+
+
+    studentMarkers.forEach(
+        m =>
+        studentMap.removeLayer(m)
+    );
+
+
+    studentMarkers=[];
+
+
+    stops.forEach(
+
+        function(stop,index){
+
+            const marker =
+            L.marker([
+                stop.lat,
+                stop.lng
+            ])
+            .addTo(studentMap);
+
+
+            marker.bindPopup(
+                "<b>🛑 Stop "+
+                (index+1)+
+                "</b><br>"+
+                stop.name
+            );
+
+
+            studentMarkers.push(
+                marker
+            );
+
+        }
+
+    );
+
+
+    if(studentRoute){
+
+        studentMap.removeLayer(
+            studentRoute
+        );
+
+    }
+
+
+    if(stops.length>=2){
+
+        studentRoute =
+        L.polyline(
+
+            stops.map(
+                s =>
+                [s.lat,s.lng]
+            ),
+
+            {
+                color:"#1264f5",
+                weight:6
+            }
+
+        )
+        .addTo(studentMap);
+
+    }
+
+}
+
+
+/* =====================================================
+   STOP LISTS
+===================================================== */
+
+
+function updateStopLists(){
+
+    document
+    .getElementById(
+        "driverStops"
+    )
+    .innerText =
+    stops.length;
+
+
+    const driverList =
+    document
+    .getElementById(
+        "driverStopList"
+    );
+
+
+    const studentList =
+    document
+    .getElementById(
+        "studentStopList"
+    );
+
+
+    if(stops.length===0){
+
+        driverList.innerHTML =
+        '<p class="info">No stops yet.</p>';
+
+        studentList.innerHTML =
+        '<p class="info">No route loaded.</p>';
+
+        return;
+
+    }
+
+
+    let html="";
+
+
+    stops.forEach(
+
+        function(stop,index){
+
+            html += `
+
+            <div class="stop-item">
+
+                <div class="number">
+                    ${index+1}
+                </div>
+
+                <div class="stop-name">
+                    ${stop.name}
+                </div>
+
+            </div>
+
+            `;
+
+        }
+
+    );
+
+
+    driverList.innerHTML=html;
+
+    studentList.innerHTML=html;
+
+}
+
+
+/* =====================================================
+   REAL DRIVER GPS
+===================================================== */
+
+
+function startDriverGPS(){
+
+    if(
+        !navigator.geolocation
+    ){
+
+        alert(
+            "GPS is not supported by this browser."
+        );
+
+        return;
+
+    }
+
+
+    if(driverGPSWatch!==null){
+
+        return;
+
+    }
+
+
+    document
+    .getElementById(
+        "driverStatus"
+    )
+    .innerText =
+    "🛰️ Getting GPS location...";
+
+
+    driverGPSWatch =
+    navigator
+    .geolocation
+    .watchPosition(
+
+        function(position){
+
+            const lat =
+            position.coords.latitude;
+
+
+            const lng =
+            position.coords.longitude;
+
+
+            const accuracy =
+            position.coords.accuracy;
+
+
+            driverPosition = {
+
+                lat:lat,
+
+                lng:lng,
+
+                accuracy:accuracy
+
+            };
+
+
+            if(!driverBusMarker){
+
+                driverBusMarker =
+                L.marker(
+
+                    [lat,lng],
+
+                    {
+                        icon:busIcon
+                    }
+
+                )
+                .addTo(driverMap);
+
+
+                driverBusMarker
+                .bindPopup(
+                    "<b>🚌 BUS-08</b><br>" +
+                    "Real GPS Location"
+                );
+
+            }
+
+            else{
+
+                driverBusMarker
+                .setLatLng(
+                    [lat,lng]
+                );
+
+            }
+
+
+            document
+            .getElementById(
+                "gpsStatus"
+            )
+            .innerText =
+            "LIVE";
+
+
+            document
+            .getElementById(
+                "driverStatus"
+            )
+            .innerText =
+            "🟢 GPS LIVE ±"+
+            Math.round(
+                accuracy
+            )+
+            "m";
+
+
+            /*
+             * Save current location.
+             *
+             * This allows the student dashboard
+             * on this same browser to see it.
+             */
+
+            localStorage.setItem(
+
+                "liveBusPosition",
+
+                JSON.stringify({
+
+                    lat:lat,
+
+                    lng:lng,
+
+                    accuracy:accuracy,
+
+                    time:Date.now()
+
+                })
+
+            );
+
+
+            updateStudentBus();
+
+        },
+
+        function(error){
+
+            document
+            .getElementById(
+                "driverStatus"
+            )
+            .innerText =
+            "❌ GPS Error";
+
+            console.log(error);
+
+        },
+
+        {
+
+            enableHighAccuracy:true,
+
+            maximumAge:2000,
+
+            timeout:15000
+
+        }
+
+    );
+
+}
+
+
+/* =====================================================
+   STOP GPS
+===================================================== */
+
+
+function stopDriverGPS(){
+
+    if(
+        driverGPSWatch!==null
+    ){
+
+        navigator
+        .geolocation
+        .clearWatch(
+            driverGPSWatch
+        );
+
+        driverGPSWatch=null;
+
+    }
+
+
+    document
+    .getElementById(
+        "gpsStatus"
+    )
+    .innerText =
+    "OFF";
+
+}
+
+
+/* =====================================================
+   CENTER DRIVER
+===================================================== */
+
+
+function centerDriver(){
+
+    if(!driverBusMarker){
+
+        alert(
+            "Start the trip first."
+        );
+
+        return;
+
+    }
+
+
+    driverMap.setView(
+
+        driverBusMarker.getLatLng(),
+
+        18
+
+    );
+
+}
+
+
+/* =====================================================
+   STUDENT BUS
+===================================================== */
+
+
+function updateStudentBus(){
+
+    if(!studentMap){
+
+        return;
+
+    }
+
+
+    const data =
+    localStorage.getItem(
+        "liveBusPosition"
+    );
+
+
+    if(!data){
+
+        return;
+
+    }
+
+
+    const position =
+    JSON.parse(data);
+
+
+    if(!studentBusMarker){
+
+        studentBusMarker =
+        L.marker(
+
+            [
+                position.lat,
+                position.lng
+            ],
+
+            {
+                icon:busIcon
+            }
+
+        )
+        .addTo(studentMap);
+
+
+        studentBusMarker
+        .bindPopup(
+            "<b>🚌 BUS-08</b><br>" +
+            "Live Bus"
+        );
+
+    }
+
+    else{
+
+        studentBusMarker
+        .setLatLng([
+            position.lat,
+            position.lng
+        ]);
+
+    }
+
+
+    document
+    .getElementById(
+        "studentBusStatus"
+    )
+    .innerText =
+    "LIVE";
+
+
+    document
+    .getElementById(
+        "studentStatus"
+    )
+    .innerText =
+    "🟢 Bus is live";
+
+
+    findStudentNextStop(
+        position
+    );
+
+}
+
+
+/* =====================================================
+   NEXT STOP
+===================================================== */
+
+
+function findStudentNextStop(
+    position
+){
+
+    if(stops.length===0){
+
+        return;
+
+    }
+
+
+    let nearest=null;
+
+    let shortest=Infinity;
+
+
+    stops.forEach(
+
+        function(stop){
+
+            const d =
+            distance(
+
+                position.lat,
+                position.lng,
+
+                stop.lat,
+                stop.lng
+
+            );
+
+
+            if(d<shortest){
+
+                shortest=d;
+
+                nearest=stop;
+
+            }
+
+        }
+
+    );
+
+
+    if(nearest){
+
+        document
+        .getElementById(
+            "studentNextStop"
+        )
+        .innerText =
+        nearest.name;
+
+
+        document
+        .getElementById(
+            "studentDistance"
+        )
+        .innerText =
+        formatDistance(
+            shortest
+        );
+
+
+        document
+        .getElementById(
+            "studentBusDistance"
+        )
+        .innerText =
+        formatDistance(
+            shortest
+        );
+
+    }
+
+}
+
+
+/* =====================================================
+   DISTANCE
+===================================================== */
+
+
+function distance(
+
+    lat1,
+    lon1,
+    lat2,
+    lon2
+
+){
+
+    const R=6371000;
+
+
+    const dLat =
+    (lat2-lat1)
+    *Math.PI/180;
+
+
+    const dLon =
+    (lon2-lon1)
+    *Math.PI/180;
+
+
+    const a =
+
+    Math.sin(dLat/2) *
+    Math.sin(dLat/2)
+
+    +
+
+    Math.cos(
+        lat1*Math.PI/180
+    )
+
+    *
+
+    Math.cos(
+        lat2*Math.PI/180
+    )
+
+    *
+
+    Math.sin(dLon/2) *
+    Math.sin(dLon/2);
+
+
+    const c =
+    2 *
+    Math.atan2(
+
+        Math.sqrt(a),
+
+        Math.sqrt(1-a)
+
+    );
+
+
+    return R*c;
+
+}
+
+
+/* =====================================================
+   FORMAT
+===================================================== */
+
+
+function formatDistance(
+    d
+){
+
+    if(d<1000){
+
+        return Math.round(d)+" m";
+
+    }
+
+
+    return (
+        d/1000
+    )
+    .toFixed(2)
+    +" km";
+
+}
+
+
+/* =====================================================
+   ROUTE SAVE
+===================================================== */
+
+
+function saveRouteAutomatically(){
+
+    localStorage.setItem(
+
+        "schoolBusRoute",
+
+        JSON.stringify(stops)
+
+    );
+
+}
+
+
+function saveDriverRoute(){
+
+    saveRouteAutomatically();
+
+    alert(
+        "💾 Route saved!"
+    );
+
+}
+
+
+/* =====================================================
+   LOAD ROUTE
+===================================================== */
+
+
+function loadSavedRoute(){
+
+    const saved =
+    localStorage.getItem(
+        "schoolBusRoute"
+    );
+
+
+    if(!saved){
+
+        return;
+
+    }
+
+
+    try{
+
+        stops =
+        JSON.parse(saved);
+
+    }
+
+    catch{
+
+        stops=[];
+
+    }
+
+
+    updateStopLists();
+
+}
+
+
+/* =====================================================
+   DRIVER LOAD
+===================================================== */
+
+
+function loadDriverRoute(){
+
+    loadSavedRoute();
+
+    drawDriverStops();
+
+    drawStudentStops();
+
+    alert(
+        "📂 Route loaded!"
+    );
+
+}
+
+
+/* =====================================================
+   EMERGENCY
+===================================================== */
+
+
+function driverEmergency(){
+
+    let location="Unknown";
+
+
+    if(driverPosition){
+
+        location =
+        driverPosition.lat
+        .toFixed(6)
+        +
+        ", "
+        +
+        driverPosition.lng
+        .toFixed(6);
+
+    }
+
+
+    alert(
+
+        "🚨 EMERGENCY\n\n" +
+
+        "Bus: BUS-08\n" +
+
+        "Driver: Mr. Sharma\n\n" +
+
+        "GPS:\n" +
+
+        location +
+
+        "\n\n" +
+
+        "Demo emergency alert."
+
+    );
+
+}
+
+
+function studentEmergency(){
+
+    alert(
+
+        "🚨 EMERGENCY\n\n" +
+
+        "The school transport control " +
+        "would be contacted in a real system."
+
+    );
+
+}
+
+
+/* =====================================================
+   NOTIFICATIONS
+===================================================== */
+
+
+function studentNotify(){
+
+    if(
+        "Notification" in window
+    ){
+
+        Notification
+        .requestPermission();
+
+    }
+
+
+    document
+    .getElementById(
+        "studentNotification"
+    )
+    .innerText =
+    "🔔 Bus arrival alerts enabled.";
+
+}
+
+
+/* =====================================================
+   STUDENT AUTO UPDATE
+===================================================== */
+
+
+/*
+ * Checks for a new driver location
+ * every second.
+ */
+
+setInterval(
+
+    function(){
+
+        updateStudentBus();
+
+    },
+
+    1000
+
+);
+
+</script>
+
+</body>
+</html>
