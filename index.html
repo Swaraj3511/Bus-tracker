@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Smart School Bus</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js">window.markStudentAttendance=markStudentAttendance;
+</script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:Inter,Arial,sans-serif}
+body{background:#f4f7fb;color:#15223a}
+button{border:0;border-radius:10px;padding:11px 14px;background:#2563eb;color:#fff;font-weight:700;cursor:pointer;margin:5px 4px 0 0}
+button:hover{filter:brightness(.94)}button.red{background:#e5394f}button.green{background:#16a36a}button.orange{background:#e58b13}button.gray{background:#64748b}
+input,select{width:100%;padding:11px;border:1px solid #d7dfeb;border-radius:9px;background:#fff;margin:5px 0;font-size:14px}
+.hidden{display:none!important}
+.login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1d4ed8,#60a5fa);padding:20px}
+.login-box{width:430px;max-width:100%;background:#fff;padding:28px;border-radius:22px;box-shadow:0 20px 60px #102a5b40}
+.logo{text-align:center;font-size:54px}.login-box h1{text-align:center;margin:8px 0}.sub{text-align:center;color:#718096;margin-bottom:20px}
+.roles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}.roles button{margin:0;background:#e9efff;color:#1d4ed8}.roles button.selected{background:#16a36a;color:#fff}
+header{position:sticky;top:0;z-index:1000;background:linear-gradient(135deg,#1d4ed8,#4f7ff2);color:#fff;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 6px 25px #17366c25}
+header h1{font-size:21px}header p{opacity:.9;font-size:13px;margin-top:3px}.live{background:#16c784;padding:7px 10px;border-radius:999px;font-size:12px;font-weight:800}
+.container{max-width:1350px;margin:18px auto;padding:0 14px}.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:15px}.card,.panel,.mapbox{background:#fff;border:1px solid #e4eaf3;box-shadow:0 7px 22px #17365b12;border-radius:16px}.card{padding:16px}.icon{font-size:25px}.label{font-size:11px;color:#718096;margin-top:6px}.value{font-size:19px;font-weight:800;margin-top:4px}
+.content{display:grid;grid-template-columns:2fr 1fr;gap:15px}.mapbox{padding:6px;overflow:hidden}.map{height:620px;border-radius:12px}.panel{padding:16px;margin-bottom:12px}.panel h2{font-size:17px;margin-bottom:10px}.muted{font-size:13px;color:#68778e;line-height:1.5}.status{padding:10px;border-radius:9px;background:#eafaf2;color:#07894f;font-weight:700;margin:10px 0}.danger{background:#fff0f2;color:#d22c44}.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}.three{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.list{max-height:320px;overflow:auto}.item{padding:10px 0;border-bottom:1px solid #edf0f4}.item b{display:block}.pill{display:inline-block;padding:4px 8px;border-radius:999px;background:#edf3ff;color:#2563eb;font-size:11px;font-weight:700;margin-top:5px}.table-wrap{overflow:auto}.table{width:100%;border-collapse:collapse;font-size:13px}.table th,.table td{padding:9px;border-bottom:1px solid #edf0f4;text-align:left;white-space:nowrap}.table th{background:#f7f9fc}.tabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px}.tabs button{background:#edf3ff;color:#1d4ed8}.tabs button.active{background:#2563eb;color:#fff}.alert-card{padding:11px;border-radius:10px;background:#fff4e5;border-left:4px solid #f59e0b;margin-bottom:8px}.emergency{background:#fff0f2;border-left-color:#e5394f}
+.landmark-control{background:#fff;border-radius:10px;padding:8px 10px;box-shadow:0 2px 10px #0002;font-size:12px}
+@media(max-width:900px){.cards{grid-template-columns:repeat(2,1fr)}.content{grid-template-columns:1fr}.map{height:52vh;min-height:390px}.row,.three{grid-template-columns:1fr}header{padding:12px}.container{padding:0 9px}.panel{padding:13px}}
+</style>
+</head>
+<body>
+
+<div id="loginScreen" class="login-screen">
+ <div class="login-box">
+  <div class="logo">🚌</div>
+  <h1>Smart School Bus</h1>
+  <p class="sub">School Transport Management</p>
+  <div class="roles">
+   <button id="roleStudent" onclick="chooseRole('student')">🧑‍🎓 Student</button>
+   <button id="roleDriver" onclick="chooseRole('driver')">🧑‍✈️ Driver</button>
+   <button id="roleTeacher" onclick="chooseRole('teacher')">👩‍🏫 Teacher</button>
+  </div>
+  <input id="loginUser" placeholder="Username">
+  <input id="loginPass" type="password" placeholder="Password">
+  <button style="width:100%;margin-top:10px" onclick="login()">🔐 Login</button>
+  <p id="loginMsg" style="color:#e5394f;text-align:center;font-size:13px;margin-top:9px"></p>
+  
+ </div>
+</div>
+
+<div id="app" class="hidden">
+<header>
+ <div><h1>🚌 Smart School Bus</h1><p id="headerSub">Transport Management</p></div>
+ <div><span class="live">● LIVE</span> <button class="gray" onclick="logout()">Logout</button></div>
+</header>
+<div class="container">
+
+<!-- ADMIN -->
+<section id="adminDashboard" class="hidden">
+ <div class="panel" id="teacherAttendancePanel" style="margin:16px 0">
+  <h2>📋 Student Attendance</h2>
+  <p class="muted">Teacher marks each student's attendance for today.</p>
+  <div id="teacherAttendanceDate" class="muted" style="margin:8px 0 12px"></div>
+  <div id="teacherAttendanceList"><p class="muted">Loading students...</p></div>
+ </div>
+
+ <div class="cards">
+  <div class="card"><div class="icon">👨‍🎓</div><div class="label">STUDENTS</div><div class="value" id="adminStudentCount">0</div></div>
+  <div class="card"><div class="icon">🧑‍✈️</div><div class="label">DRIVERS</div><div class="value" id="adminDriverCount">0</div></div>
+  <div class="card"><div class="icon">🚌</div><div class="label">BUSES</div><div class="value" id="adminBusCount">0</div></div>
+  <div class="card"><div class="icon">🚨</div><div class="label">EMERGENCIES</div><div class="value" id="adminEmergencyCount">0</div></div>
+ </div>
+ <div class="tabs">
+  <button id="tabPeople" class="active" onclick="adminTab('people')">👥 People</button>
+  <button id="tabBuses" onclick="adminTab('buses')">🚌 Buses</button>
+  <button id="tabStops" onclick="adminTab('stops')">📍 Stops & Routes</button>
+  <button id="tabAttendance" onclick="adminTab('attendance')">✅ Attendance</button>
+  <button id="tabLeave" onclick="adminTab('leave')">🏫 Leave Requests</button>
+  <button id="tabAlerts" onclick="adminTab('alerts')">🚨 Alerts</button>
+ </div>
+
+ <div id="adminPeople" class="adminTab">
+  <div class="content">
+   <div>
+    <div class="panel">
+     <h2>➕ Add Student</h2>
+     <div class="row"><input id="sName" placeholder="Student full name"><input id="sUser" placeholder="Login username"></div>
+     <div class="row"><input id="sPass" placeholder="Password"><input id="sClass" placeholder="Class / Grade"></div>
+     <div class="row"><input id="sSection" placeholder="Section"><select id="sStop"><option value="">Choose stop</option></select></div>
+     <button onclick="addStudent()">Add Student</button>
+    </div>
+    <div class="panel">
+     <h2>➕ Add Driver</h2>
+     <div class="row"><input id="dName" placeholder="Driver full name"><input id="dUser" placeholder="Login username"></div>
+     <div class="row"><input id="dPass" placeholder="Password"><input id="dPhone" placeholder="Phone"></div>
+     <select id="dBus"><option value="">Choose bus</option></select>
+     <button onclick="addDriver()">Add Driver</button>
+    </div>
+   </div>
+   <div>
+    <div class="panel"><h2>👨‍🎓 Students</h2><div id="studentAdminList" class="list"></div></div>
+    <div class="panel"><h2>🧑‍✈️ Drivers</h2><div id="driverAdminList" class="list"></div></div>
+   </div>
+  </div>
+ </div>
+
+ <div id="adminBuses" class="adminTab hidden">
+  <div class="panel">
+   <h2>🚌 Add Bus</h2>
+   <div class="row"><input id="busId" placeholder="Bus ID e.g. BUS-01"><input id="busNumber" placeholder="Registration / Number"></div>
+   <input id="busCapacity" placeholder="Capacity">
+   <button onclick="addBus()">Add Bus</button>
+  </div>
+  <div class="panel"><h2>Bus List</h2><div id="busAdminList" class="list"></div></div>
+ </div>
+
+ <div id="adminStops" class="adminTab hidden">
+  <div class="content">
+   <div class="mapbox"><div id="adminMap" class="map"></div></div>
+   <div>
+    <div class="panel">
+     <h2>📍 Create Stop</h2>
+     <p class="muted">Click the map, enter a name, then save. Stops can be assigned to students.</p>
+     <input id="stopName" placeholder="Stop name">
+     <button onclick="enableStopMode()">📍 Add Stop on Map</button>
+     <button onclick="saveRoute()">💾 Save Route</button>
+     <button class="red" onclick="clearStops()">Clear Route</button>
+    </div>
+    <div class="panel"><h2>Stops</h2><div id="adminStopList" class="list"></div></div>
+   </div>
+  </div>
+ </div>
+
+ <div id="adminAttendance" class="adminTab hidden">
+  <div class="panel"><h2>✅ Attendance</h2><p class="muted">Driver marks students as Present/Absent/Boarded for the active trip.</p>
+   <div class="row"><select id="attendanceBus"></select><button onclick="loadAttendance()">Load Active Students</button></div>
+   <div id="attendanceList" class="list" style="margin-top:10px"></div>
+  </div>
+ </div>
+
+ <div id="adminLeave" class="adminTab hidden">
+  <div class="panel">
+   <h2>🏫 Live Leave Requests</h2>
+   <p class="muted">Student leave requests appear here live. Approve or reject each request.</p>
+   <div id="teacherLeaveList"><p class="muted">Loading leave requests...</p></div>
+  </div>
+ </div>
+
+ <div id="adminAlerts" class="adminTab hidden">
+  <div class="panel"><h2>🚨 Emergency Notifications</h2><div id="adminAlertList"></div></div>
+ </div>
+</section>
+
+<!-- DRIVER -->
+<section id="driverDashboard" class="hidden">
+ <div class="cards">
+  <div class="card"><div class="icon">🚌</div><div class="label">BUS</div><div class="value" id="driverBusLabel">-</div></div>
+  <div class="card"><div class="icon">📍</div><div class="label">STOPS</div><div class="value" id="driverStopCount">0</div></div>
+  <div class="card"><div class="icon">🛰️</div><div class="label">GPS</div><div class="value" id="driverGps">OFF</div></div>
+  <div class="card"><div class="icon">👥</div><div class="label">ATTENDANCE</div><div class="value" id="driverAttendanceCount">0</div></div>
+ </div>
+ <div class="content">
+  <div class="mapbox"><div id="driverMap" class="map"></div></div>
+  <div>
+   <div class="panel">
+    <h2>🧑‍✈️ Driver Control</h2>
+    <p><b>Driver:</b> <span id="driverNameLabel">-</span></p>
+    <p style="margin-top:6px"><b>Bus:</b> <span id="driverBusLabel2">-</span></p>
+    <div id="driverStatus" class="status">● Trip not started</div>
+    <button class="green" onclick="startTrip()">🟢 Start Trip</button>
+    <button onclick="centerDriver()">🎯 Find Bus</button>
+    <button class="orange" onclick="endTrip()">🔴 End Trip</button>
+    <button class="red" onclick="sendEmergency('driver')">🚨 Emergency</button>
+   </div>
+   <div class="panel">
+    <h2>📍 Route</h2>
+    <p class="muted">Select a bus and click map to add stops. The blue line follows roads.</p>
+    <button onclick="enableDriverStopMode()">➕ Add Stop</button>
+    <button onclick="saveDriverRoute()">💾 Save Route</button>
+   </div>
+   <div class="panel"><h2>👥 Attendance</h2><div id="driverAttendanceList" class="list"></div></div>
+  </div>
+ </div>
+</section>
+
+<!-- STUDENT -->
+<section id="studentDashboard" class="hidden">
+ <div class="cards">
+  <div class="card"><div class="icon">🚌</div><div class="label">BUS</div><div class="value" id="studentBusLabel">-</div></div>
+  <div class="card"><div class="icon">🟢</div><div class="label">STATUS</div><div class="value" id="studentBusStatus">Waiting</div></div>
+  <div class="card"><div class="icon">📍</div><div class="label">MY STOP</div><div class="value" id="studentMyStop">-</div></div>
+  <div class="card"><div class="icon">⏱️</div><div class="label">DISTANCE</div><div class="value" id="studentDistance">-</div></div>
+ </div>
+ <div class="content">
+  <div class="mapbox"><div id="studentMap" class="map"></div></div>
+  <div>
+   
+ <div class="panel" id="studentAttendance">
+  <h2>📋 My Attendance</h2>
+  <div id="studentAttendanceValue" class="status">⚪ Not marked yet</div>
+  <p id="studentAttendanceTime" class="muted" style="margin-top:8px">Teacher has not marked today's attendance.</p>
+ </div>
+<div class="panel">
+    <h2>🧑‍🎓 Student Dashboard</h2>
+    <p><b>Student:</b> <span id="studentNameLabel">-</span></p>
+    <p style="margin-top:6px"><b>Class:</b> <span id="studentClassLabel">-</span></p>
+    <div id="studentStatus" class="status">● Waiting for bus</div>
+    <p><b>Next Stop:</b></p><p id="studentNextStop" style="font-weight:800;margin-top:5px">-</p>
+    <p style="margin-top:12px"><b>Bus Distance:</b></p><p id="studentBusDistance" style="font-weight:800;margin-top:5px">-</p>
+     <p style="margin-top:12px"><b>Estimated Arrival:</b></p>
+     <p id="studentEta" style="font-weight:900;font-size:18px;margin-top:5px">-</p>
+   </div>
+   <div class="panel">
+    <h2>📍 Choose My Stop</h2>
+    <select id="studentStopChoice" onchange="studentChooseStop()"><option value="">Choose your stop</option></select>
+    <button onclick="studentChooseStop()">Save My Stop</button>
+   </div>
+   <div class="panel"><h2>📍 Route & Stops</h2><div id="studentStopList" class="list"></div></div>
+   <div class="panel" id="studentLeavePanel">
+    <h2>🏫 I Can't Come to School</h2>
+    <p class="muted">Tell your teacher why you cannot come to school today. Your teacher will approve or reject the leave request.</p>
+    <textarea id="leaveReason" placeholder="Enter reason..." style="width:100%;min-height:90px;padding:11px;border:1px solid #d7dfeb;border-radius:9px;margin:8px 0;font-size:14px;resize:vertical"></textarea>
+    <button class="orange" onclick="sendLeaveRequest()">📨 Send Leave Request</button>
+    <div id="studentLeaveStatus" class="status" style="margin-top:10px">⚪ No leave request for today.</div>
+   </div>
+   <div class="panel">
+    <h2>🔔 Notifications</h2><div id="studentAlerts"></div>
+    <button onclick="enableNotifications()">🔔 Enable Alerts</button>
+    <button class="red" onclick="sendEmergency('student')">🚨 Emergency</button>
+   </div>
+  </div>
+ </div>
+</section>
+
+</div>
+<footer style="text-align:center;padding:22px;color:#718096">Smart School Bus • Ambernath • Live transport management</footer>
+</div>
+
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
+import {getDatabase,ref,set,update,onValue,get,push,remove} from "https://www.gstatic.com/firebasejs/12.18.0/firebase-database.js";
+
+const firebaseConfig={
+ apiKey:"AIzaSyCMx0gcalF6GlWr4nuwEzAqRPtxczfKz7w",
+ authDomain:"school-bus-tracker-1a44a.firebaseapp.com",
+ databaseURL:"https://school-bus-tracker-1a44a-default-rtdb.firebaseio.com",
+ projectId:"school-bus-tracker-1a44a",
+ storageBucket:"school-bus-tracker-1a44a.firebasestorage.app",
+ messagingSenderId:"212649607872",
+ appId:"1:212649607872:web:8c6dbbc82d36002fd96325",
+ measurementId:"G-LLCZQ1BE2E"
+};
+const app=initializeApp(firebaseConfig),db=getDatabase(app);
+let role=null,currentUser=null,currentBus=null,driverWatch=null,driverMap=null,studentMap=null,adminMap=null;
+let driverMarker=null,studentMarker=null,stops=[],driverMarkers=[],studentMarkers=[],routeLayer=null,driverRouteId=0,studentRouteId=0;
+let adminStopMode=false,driverStopMode=false,adminTabName="people",studentTripUnsub=null,alertUnsub=null,attendanceUnsub=null,leaveStudentUnsub=null,leaveTeacherUnsub=null;
+
+const busIcon=L.divIcon({html:'<div style="font-size:34px">🚌</div>',className:"",iconSize:[40,40],iconAnchor:[20,20]});
+const landmarkIcons={school:"🏫",hospital:"🏥",fuel:"⛽",station:"🚉",bus:"🚏",bank:"🏦",worship:"🛕",market:"🛍️"};
+
+function chooseRole(r){
+ role=r;["student","driver","teacher"].forEach(x=>document.getElementById("role"+x[0].toUpperCase()+x.slice(1))?.classList.remove("selected"));
+ document.getElementById("role"+r[0].toUpperCase()+r.slice(1)).classList.add("selected");
+}
+function login(){
+ const u=document.getElementById("loginUser").value.trim(),p=document.getElementById("loginPass").value;
+ if(!role)return msg("Select Student, Driver or Teacher.");
+ if(role==="teacher"){
+   if(u==="teacher"&&p==="teacher123"){currentUser={id:"teacher",name:"Teacher",role:"teacher"};openTeacher();return}
+   return msg("Invalid teacher login.");
+ }
+ get(ref(db,`users/${role}`)).then(s=>{
+   const data=s.val()||{};
+   const found=Object.entries(data).find(([id,x])=>x.username===u&&x.password===p);
+   if(!found)return msg("Invalid username or password.");
+   currentUser={id:found[0],...found[1],role}; role==="driver"?openDriver():openStudent();
+ }).catch(e=>msg(e.message));
+}
+function msg(t){document.getElementById("loginMsg").innerText=t}
+function showApp(title){
+ document.getElementById("loginScreen").classList.add("hidden");document.getElementById("app").classList.remove("hidden");
+ document.getElementById("headerSub").innerText=title;
+ ["adminDashboard","driverDashboard","studentDashboard"].forEach(id=>document.getElementById(id).classList.add("hidden"));
+}
+function openTeacher(){showApp("Teacher Control Center");document.getElementById("adminDashboard").classList.remove("hidden");adminTab("people");initTeacherData();watchStudentStatuses();watchTeacherAttendance();watchTeacherLeaveRequests();}
+function openDriver(){showApp("Driver Live Trip");document.getElementById("driverDashboard").classList.remove("hidden");initDriver()}
+function openStudent(){showApp("Student Live Tracking");document.getElementById("studentDashboard").classList.remove("hidden");initStudent(); watchStudentAttendance();}
+function logout(){if(driverWatch!==null)navigator.geolocation.clearWatch(driverWatch);driverWatch=null;location.reload()}
+
+function baseMap(el){
+ const map=L.map(el).setView([19.1860,73.1860],14);
+ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap contributors"}).addTo(map);
+ return map;
+}
+function addLandmarks(map){
+ const group=L.layerGroup().addTo(map);
+ const q=`[out:json][timeout:25];(
+ node["amenity"="school"](19.14,73.13,19.23,73.24);
+ node["amenity"="hospital"](19.14,73.13,19.23,73.24);
+ node["amenity"="fuel"](19.14,73.13,19.23,73.24);
+ node["railway"="station"](19.14,73.13,19.23,73.24);
+ node["highway"="bus_stop"](19.14,73.13,19.23,73.24);
+ node["amenity"="bank"](19.14,73.13,19.23,73.24);
+ node["amenity"="place_of_worship"](19.14,73.13,19.23,73.24);
+ node["shop"="supermarket"](19.14,73.13,19.23,73.24);
+);out tags;`;
+ fetch("https://overpass-api.de/api/interpreter",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:"data="+encodeURIComponent(q)})
+ .then(r=>r.json()).then(d=>d.elements.forEach(x=>{
+   let t=x.tags||{},type="Landmark",e="📍";
+   if(t.amenity==="school"){type="School";e="🏫"} else if(t.amenity==="hospital"){type="Hospital";e="🏥"} else if(t.amenity==="fuel"){type="Petrol Pump";e="⛽"} else if(t.railway==="station"){type="Railway Station";e="🚉"} else if(t.highway==="bus_stop"){type="Bus Stop";e="🚏"} else if(t.amenity==="bank"){type="Bank";e="🏦"} else if(t.amenity==="place_of_worship"){type="Place of Worship";e="🛕"} else if(t.shop){type="Market";e="🛍️"}
+   const icon=L.divIcon({html:`<div style="background:white;border:2px solid #2563eb;border-radius:50%;width:31px;height:31px;display:flex;align-items:center;justify-content:center;font-size:17px;box-shadow:0 2px 8px #0003">${e}</div>`,className:"",iconSize:[31,31],iconAnchor:[15,15]});
+   L.marker([x.lat,x.lon],{icon}).bindPopup(`<b>${e} ${t.name||type}</b><br><small>${type}</small>`).addTo(group);
+ })).catch(()=>{});
+ return group;
+}
+
+async function roadRoute(map,old,points,isDriver){
+ if(old&&map.hasLayer(old))map.removeLayer(old);
+ if(points.length<2)return null;
+ const id=isDriver?++driverRouteId:++studentRouteId;
+ try{
+  const coords=points.map(s=>`${s.lng},${s.lat}`).join(";");
+  const r=await fetch(`https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`);
+  const d=await r.json();if((isDriver?driverRouteId:studentRouteId)!==id)return null;
+  const line=d.routes[0].geometry.coordinates.map(c=>[c[1],c[0]]);
+  return L.polyline(line,{color:"#2563eb",weight:6,opacity:.9,lineCap:"round",lineJoin:"round"}).addTo(map);
+ }catch(e){return L.polyline(points.map(s=>[s.lat,s.lng]),{color:"#94a3b8",weight:4,dashArray:"8 8"}).addTo(map)}
+}
+function redrawRoute(map,isDriver){roadRoute(map,isDriver?routeLayer:null,stops,isDriver).then(x=>routeLayer=x)}
+
+function drawStops(map,isDriver){
+ const arr=isDriver?driverMarkers:studentMarkers;arr.forEach(m=>map.removeLayer(m));arr.length=0;
+ stops.forEach((s,i)=>{let m=L.marker([s.lat,s.lng]).addTo(map).bindPopup(`<b>📍 Stop ${i+1}</b><br>${s.name}`);arr.push(m)});
+ redrawRoute(map,isDriver);
+}
+
+function syncStops(){
+ onValue(ref(db,`routes/${currentBus||"default"}`),snap=>{
+  stops=snap.val()?.stops||[];drawStops(driverMap,true);drawStops(studentMap,false);renderStops();fillStopSelects();
+ });
+}
+function renderStops(){
+ document.getElementById("driverStopCount")&&(document.getElementById("driverStopCount").innerText=stops.length);
+ const a=document.getElementById("adminStopList"),b=document.getElementById("studentStopList");
+ const html=stops.map((s,i)=>`<div class="item"><b>${i+1}. ${s.name}</b><span class="pill">${s.lat.toFixed(5)}, ${s.lng.toFixed(5)}</span></div>`).join("");
+ if(a)a.innerHTML=html||'<p class="muted">No stops yet.</p>';
+ if(b)b.innerHTML=html||'<p class="muted">No route stops yet.</p>';
+}
+function fillStopSelects(){
+ ["sStop","studentStopChoice"].forEach(id=>{const el=document.getElementById(id);if(!el)return;el.innerHTML='<option value="">Choose stop</option>'+stops.map(s=>`<option value="${s.name}">${s.name}</option>`).join("")});
+}
+function addStopAt(lat,lng){
+ const name=(document.getElementById("stopName")?.value||prompt("Enter stop name:")||"").trim();if(!name)return;
+ stops.push({name,lat,lng});renderStops();fillStopSelects();drawStops(driverMap,true);drawStops(studentMap,false);
+}
+function enableStopMode(){adminStopMode=true;alert("Now click the map to add a stop.")}
+function enableDriverStopMode(){driverStopMode=true;alert("Now click the driver map to add a stop.")}
+function saveRoute(){if(!currentBus)return alert("Select/add a bus first.");set(ref(db,`routes/${currentBus}`),{stops,updatedAt:Date.now()}).then(()=>alert("Route saved."))}
+function saveDriverRoute(){saveRoute()}
+function clearStops(){if(confirm("Clear all route stops?")){stops=[];renderStops();drawStops(driverMap,true);drawStops(studentMap,false);saveRoute()}}
+function setupMapClicks(){
+ adminMap?.on("click",e=>{if(adminStopMode){adminStopMode=false;addStopAt(e.latlng.lat,e.latlng.lng)}});
+ driverMap?.on("click",e=>{if(driverStopMode){driverStopMode=false;addStopAt(e.latlng.lat,e.latlng.lng)}});
+}
+
+async function initTeacherData(){
+ onValue(ref(db,"users/student"),s=>{const d=s.val()||{};document.getElementById("adminStudentCount").innerText=Object.keys(d).length;document.getElementById("studentAdminList").innerHTML=Object.entries(d).map(([id,x])=>`<div class="item"><b>${x.name}</b><span class="pill">${x.username} · Class ${x.class||"-"} · Stop ${x.stop||"Not assigned"}</span></div>`).join("")||'<p class="muted">No students added.</p>'});
+ onValue(ref(db,"users/driver"),s=>{const d=s.val()||{};document.getElementById("adminDriverCount").innerText=Object.keys(d).length;document.getElementById("driverAdminList").innerHTML=Object.entries(d).map(([id,x])=>`<div class="item"><b>${x.name}</b><span class="pill">${x.username} · ${x.busId||"No bus"}</span></div>`).join("")||'<p class="muted">No drivers added.</p>';fillDrivers(d)});
+ onValue(ref(db,"buses"),s=>{const d=s.val()||{};document.getElementById("adminBusCount").innerText=Object.keys(d).length;document.getElementById("busAdminList").innerHTML=Object.entries(d).map(([id,x])=>`<div class="item"><b>${id}</b><span class="pill">${x.number||""} · Capacity ${x.capacity||"-"}</span></div>`).join("")||'<p class="muted">No buses added.</p>';fillBuses(d)});
+ onValue(ref(db,"emergencies"),s=>{const d=s.val()||{};document.getElementById("adminEmergencyCount").innerText=Object.keys(d).length;document.getElementById("adminAlertList").innerHTML=Object.values(d).sort((a,b)=>(b.time||0)-(a.time||0)).map(x=>`<div class="alert-card emergency"><b>🚨 ${x.type||"Emergency"}</b><br>${x.userName||"-"} · ${x.busId||"-"}<br><small>${new Date(x.time||Date.now()).toLocaleString()}</small><br>${x.message||""}</div>`).join("")||'<p class="muted">No emergency alerts.</p>'});
+ if(!adminMap){adminMap=baseMap("adminMap");addLandmarks(adminMap);setupMapClicks()}
+ syncStops();
+}
+function fillDrivers(d){const e=document.getElementById("dBus");if(e)e.innerHTML='<option value="">Choose bus</option>';get(ref(db,"buses")).then(s=>fillBuses(s.val()||{}))}
+function fillBuses(d){
+ const a=document.getElementById("dBus"),b=document.getElementById("attendanceBus");
+ const opts=Object.entries(d).map(([id,x])=>`<option value="${id}">${id} ${x.number?"· "+x.number:""}</option>`).join("");
+ if(a)a.innerHTML='<option value="">Choose bus</option>'+opts;if(b)b.innerHTML=opts;
+}
+async function addStudent(){
+ const x={name:sName.value.trim(),username:sUser.value.trim(),password:sPass.value,class:sClass.value,section:sSection.value,stop:sStop.value};
+ if(!x.name||!x.username||!x.password)return alert("Name, username and password are required.");
+ await set(ref(db,"users/student/"+x.username),x);alert("Student added.");
+}
+async function addDriver(){
+ const x={name:dName.value.trim(),username:dUser.value.trim(),password:dPass.value,phone:dPhone.value,busId:dBus.value};
+ if(!x.name||!x.username||!x.password||!x.busId)return alert("Name, username, password and bus are required.");
+ await set(ref(db,"users/driver/"+x.username),x);alert("Driver added.");
+}
+async function addBus(){
+ const id=busId.value.trim();if(!id)return alert("Enter Bus ID.");
+ await set(ref(db,"buses/"+id),{number:busNumber.value.trim(),capacity:busCapacity.value.trim()});alert("Bus added.");
+}
+function adminTab(t){
+ document.querySelectorAll(".adminTab").forEach(x=>x.classList.add("hidden"));document.getElementById("admin"+t[0].toUpperCase()+t.slice(1)).classList.remove("hidden");
+ document.querySelectorAll(".tabs button").forEach(x=>x.classList.remove("active"));document.getElementById("tab"+t[0].toUpperCase()+t.slice(1)).classList.add("active");
+ if(t==="stops"&&!adminMap){adminMap=baseMap("adminMap");addLandmarks(adminMap);setupMapClicks();syncStops()}
+}
+async function loadAttendance(){
+ const bus=attendanceBus.value;if(!bus)return;
+ const students=(await get(ref(db,"users/student"))).val()||{};
+ document.getElementById("attendanceList").innerHTML=Object.entries(students).map(([id,x])=>`
+ <div class="item"><b>${x.name}</b><span class="pill">${x.class||""} · ${x.stop||"No stop"}</span>
+ <button class="green" onclick="markAttendance('${id}','${bus}','present')">Present</button>
+ <button class="red" onclick="markAttendance('${id}','${bus}','absent')">Absent</button>
+ </div>`).join("");
+}
+async function markAttendance(id,bus,status){await set(ref(db,`attendance/${bus}/${id}`),{status,time:Date.now(),markedBy:currentUser?.name||"admin"});alert("Attendance saved.")}
+async function initDriver(){
+ const d=currentUser;document.getElementById("driverNameLabel").innerText=d.name;document.getElementById("driverBusLabel").innerText=d.busId;document.getElementById("driverBusLabel2").innerText=d.busId;currentBus=d.busId;
+ driverMap=baseMap("driverMap");addLandmarks(driverMap);syncStops();loadDriverAttendance();
+}
+function loadDriverAttendance(){
+ get(ref(db,"users/student")).then(s=>{const d=s.val()||{};document.getElementById("driverAttendanceList").innerHTML=Object.entries(d).map(([id,x])=>`<div class="item"><b>${x.name}</b><span class="pill">${x.stop||"No stop"}</span><br><button class="green" onclick="markAttendance('${id}','${currentBus}','present')">Present</button><button class="red" onclick="markAttendance('${id}','${currentBus}','absent')">Absent</button></div>`).join("")});
+}
+function startTrip(){
+ if(!navigator.geolocation)return alert("GPS not supported.");
+ if(!currentBus)return alert("No bus assigned.");
+ update(ref(db,`trips/${currentBus}`),{status:"started",driverId:currentUser.id,driverName:currentUser.name,busId:currentBus,startTime:Date.now()});
+ document.getElementById("driverStatus").innerText="🛰️ Getting GPS…";
+ driverWatch=navigator.geolocation.watchPosition(async pos=>{
+  const data={status:"started",driverId:currentUser.id,driverName:currentUser.name,busId:currentBus,latitude:pos.coords.latitude,longitude:pos.coords.longitude,accuracy:pos.coords.accuracy,timestamp:Date.now()};
+  await update(ref(db,`trips/${currentBus}`),data);
+  if(!driverMarker)driverMarker=L.marker([data.latitude,data.longitude],{icon:busIcon,zIndexOffset:1000}).addTo(driverMap).bindPopup(`<b>🚌 ${currentBus}</b><br>Live GPS`);
+  else driverMarker.setLatLng([data.latitude,data.longitude]);
+  driverMap.setView([data.latitude,data.longitude],16);
+  driverPosition=data;document.getElementById("driverGps").innerText="LIVE";document.getElementById("driverStatus").innerText=`🟢 GPS LIVE ±${Math.round(data.accuracy)}m`;
+ },e=>document.getElementById("driverStatus").innerText="❌ GPS error: "+e.message,{enableHighAccuracy:true,maximumAge:1000,timeout:15000});
+}
+async function endTrip(){
+ if(driverWatch!==null){navigator.geolocation.clearWatch(driverWatch);driverWatch=null}
+ if(currentBus)await update(ref(db,`trips/${currentBus}`),{status:"ended",endedAt:Date.now()});
+ document.getElementById("driverGps").innerText="OFF";document.getElementById("driverStatus").innerText="🔴 Trip ended";
+}
+function centerDriver(){if(driverMarker)driverMap.setView(driverMarker.getLatLng(),18);else alert("Start the trip first.")}
+function initStudent(){
+ document.getElementById("studentNameLabel").innerText=currentUser.name;document.getElementById("studentClassLabel").innerText=currentUser.class||"-";document.getElementById("studentMyStop").innerText=currentUser.stop||"Choose";
+ currentBus=currentUser.busId||null;document.getElementById("studentBusLabel").innerText=currentBus||"Not assigned";
+ studentMap=baseMap("studentMap");addLandmarks(studentMap);syncStops();fillStopSelects();
+ if(currentUser.stop)studentStopChoice.value=currentUser.stop;
+ if(currentBus)watchStudentTrip(currentBus);
+ watchStudentAlerts();
+ watchStudentLeaveStatus();
+}
+function studentChooseStop(){
+ const stop=studentStopChoice.value;if(!stop)return alert("Choose a stop.");
+ update(ref(db,`users/student/${currentUser.id}`),{stop});currentUser.stop=stop;studentMyStop.innerText=stop;alert("Your stop is saved.");
+}
+function watchStudentTrip(bus){
+ if(studentTripUnsub)studentTripUnsub();
+ studentTripUnsub=onValue(ref(db,`trips/${bus}`),snap=>{
+  const t=snap.val();
+  if(!t||t.status!=="started"||!t.latitude){studentBusStatus.innerText="Waiting";studentStatus.innerText="● Waiting for bus";return}
+  if(!studentMarker)studentMarker=L.marker([t.latitude,t.longitude],{icon:busIcon,zIndexOffset:1000}).addTo(studentMap).bindPopup(`<b>🚌 ${bus}</b><br>Live Bus`);
+  else studentMarker.setLatLng([t.latitude,t.longitude]);
+  studentBusStatus.innerText="LIVE";studentStatus.innerText="🟢 Bus is live";studentMap.setView([t.latitude,t.longitude],15);
+  nextStop(t.latitude,t.longitude);
+ });
+}
+function nextStop(lat,lng){
+  if(!stops.length){
+    studentNextStop.innerText="-";
+    studentDistance.innerText="-";
+    studentBusDistance.innerText="-";
+    studentEta.innerText="-";
+    return;
+  }
+
+  let target=stops.find(s=>s.name===currentUser?.stop)||null;
+
+  if(!target){
+    let nearest=null,shortest=Infinity;
+    stops.forEach(s=>{
+      const d=distance(lat,lng,s.lat,s.lng);
+      if(d<shortest){shortest=d;nearest=s}
+    });
+    target=nearest;
+  }
+
+  if(!target)return;
+
+  const d=distance(lat,lng,target.lat,target.lng);
+  studentNextStop.innerText=target.name;
+  studentDistance.innerText=fmt(d);
+  studentBusDistance.innerText=fmt(d);
+
+  const averageBusSpeedKmh=24;
+  const minutes=Math.max(1,Math.round((d/1000)/averageBusSpeedKmh*60));
+  studentEta.innerText=minutes+" min";
+}
+function distance(a,b,c,d){const R=6371000,p=Math.PI/180,A=Math.sin((c-a)*p/2)**2+Math.cos(a*p)*Math.cos(c*p)*Math.sin((d-b)*p/2)**2;return 2*R*Math.atan2(Math.sqrt(A),Math.sqrt(1-A))}
+function fmt(d){return d<1000?Math.round(d)+" m":(d/1000).toFixed(2)+" km"}
+
+function attendanceDateKey(){
+ const d=new Date();
+ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
+function formatAttendanceTime(ts){return ts?new Date(ts).toLocaleString():"";}
+async function markStudentAttendance(studentId,studentName,status){
+ await update(ref(db,`attendance/${attendanceDateKey()}/${studentId}`),{
+  studentId,studentName,status,markedBy:"teacher",time:Date.now()
+ });
+}
+function watchTeacherAttendance(){
+ const list=document.getElementById("teacherAttendanceList");
+ const dateEl=document.getElementById("teacherAttendanceDate");
+ if(!list)return;
+ const date=attendanceDateKey();
+ if(dateEl)dateEl.innerText="Date: "+date;
+ onValue(ref(db,"students"),snap=>{
+  const students=snap.val()||{};
+  onValue(ref(db,`attendance/${date}`),attSnap=>{
+   const attendance=attSnap.val()||{};
+   const rows=Object.entries(students);
+   if(!rows.length){
+    list.innerHTML='<p class="muted">No students added yet. Add students from the Teacher panel.</p>';
+    return;
+   }
+   list.innerHTML=rows.map(([id,s])=>{
+    const a=attendance[id]||{};
+    const label=a.status==="present"?"🟢 Present":a.status==="absent"?"🔴 Absent":"⚪ Not marked";
+    const name=s.name||s.studentName||id;
+    return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 0;border-bottom:1px solid #eee">
+     <div><b>${name}</b><div class="muted">${s.class||""}${s.stop?" · "+s.stop:""}</div><div class="muted">${a.time?formatAttendanceTime(a.time):""}</div></div>
+     <div style="display:flex;gap:6px;flex-wrap:wrap"><span class="pill">${label}</span>
+      <button class="green" onclick='markStudentAttendance(${JSON.stringify(id)},${JSON.stringify(name)},"present")'>Present</button>
+      <button class="red" onclick='markStudentAttendance(${JSON.stringify(id)},${JSON.stringify(name)},"absent")'>Absent</button>
+     </div>
+    </div>`;
+   }).join("");
+  });
+ });
+}
+function watchStudentAttendance(){
+ if(!currentUser?.id)return;
+ onValue(ref(db,`attendance/${attendanceDateKey()}/${currentUser.id}`),snap=>{
+  const a=snap.val(), value=document.getElementById("studentAttendanceValue"), time=document.getElementById("studentAttendanceTime");
+  if(!value||!time)return;
+  if(!a){value.innerText="⚪ Not marked yet";time.innerText="Teacher has not marked today's attendance.";return;}
+  value.innerText=a.status==="present"?"🟢 Present":"🔴 Absent";
+  time.innerText="Marked: "+formatAttendanceTime(a.time);
+ });
+}
+
+async function saveStudentTripStatus(status,label){
+  if(!currentUser?.id)return;
+  await update(ref(db,`studentStatus/${currentUser.id}`),{
+    status,label,
+    studentName:currentUser.name,
+    class:currentUser.class||"",
+    stop:currentUser.stop||"",
+    busId:currentBus||"",
+    time:Date.now()
+  });
+  studentAttendanceStatus.innerText=label;
+  studentAttendanceStatus.className="status";
+  alert("Response saved.");
+}
+
+function studentBoardBus(){
+  saveStudentTripStatus("boarding","🚌 I’m getting on the bus");
+}
+
+function studentNotComing(){
+  saveStudentTripStatus("not_coming","🏫 I can’t come to school today");
+}
+
+function studentResetStatus(){
+  saveStudentTripStatus("no_response","⚪ No response yet");
+}
+
+function watchStudentStatuses(){
+  onValue(ref(db,"studentStatus"),snap=>{
+    const data=snap.val()||{};
+    const list=document.getElementById("driverAttendanceList");
+    if(!list)return;
+    const rows=Object.values(data).sort((a,b)=>(b.time||0)-(a.time||0));
+    list.innerHTML=rows.length
+      ? rows.map(x=>`<div class="item"><b>${x.studentName||"-"}</b><span class="pill">${x.label||"No response"} · ${x.stop||"No stop"}</span></div>`).join("")
+      : '<p class="muted">No student responses yet.</p>';
+  });
+}
+
+function todayDateKey(){
+ const d=new Date();
+ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
+async function sendLeaveRequest(){
+ if(!currentUser?.id)return;
+ const reason=document.getElementById("leaveReason")?.value.trim();
+ if(!reason)return alert("Please enter the reason for leave.");
+ const date=todayDateKey();
+ const request={studentId:currentUser.id,studentName:currentUser.name||"",class:currentUser.class||"",section:currentUser.section||"",stop:currentUser.stop||"",busId:currentBus||currentUser.busId||"",reason,date,status:"pending",requestedAt:Date.now(),decidedAt:null,decidedBy:null};
+ await set(ref(db,`leaveRequests/${currentUser.id}/${date}`),request);
+ document.getElementById("leaveReason").value="";
+ alert("Leave request sent to teacher.");
+}
+function watchStudentLeaveStatus(){
+ if(!currentUser?.id)return;
+ if(leaveStudentUnsub)leaveStudentUnsub();
+ const date=todayDateKey();
+ leaveStudentUnsub=onValue(ref(db,`leaveRequests/${currentUser.id}/${date}`),snap=>{
+  const x=snap.val(),el=document.getElementById("studentLeaveStatus");
+  if(!el)return;
+  if(!x){el.innerText="⚪ No leave request for today.";return;}
+  if(x.status==="approved")el.innerText="🟢 Leave Approved by Teacher";
+  else if(x.status==="rejected")el.innerText="🔴 Leave Rejected by Teacher";
+  else el.innerText="🟠 Leave request sent • Waiting for teacher approval";
+ });
+}
+function watchTeacherLeaveRequests(){
+ const list=document.getElementById("teacherLeaveList");
+ if(!list)return;
+ if(leaveTeacherUnsub)leaveTeacherUnsub();
+ leaveTeacherUnsub=onValue(ref(db,"leaveRequests"),snap=>{
+  const all=snap.val()||{},rows=[];
+  Object.entries(all).forEach(([studentId,dates])=>Object.entries(dates||{}).forEach(([date,x])=>{if(x)rows.push({studentId,date,...x})}));
+  rows.sort((a,b)=>(b.requestedAt||0)-(a.requestedAt||0));
+  if(!rows.length){list.innerHTML='<p class="muted">No leave requests yet.</p>';return;}
+  list.innerHTML=rows.map(x=>{
+   const status=x.status==="approved"?"🟢 Approved":x.status==="rejected"?"🔴 Rejected":"🟠 Pending";
+   const actions=x.status==="pending"?`<button class="green" onclick='updateLeaveRequest(${JSON.stringify(x.studentId)},${JSON.stringify(x.date)},"approved")'>✅ Approve</button><button class="red" onclick='updateLeaveRequest(${JSON.stringify(x.studentId)},${JSON.stringify(x.date)},"rejected")'>❌ Reject</button>`:"";
+   return `<div class="item" style="padding:14px 0"><b>👨‍🎓 ${escapeHtml(x.studentName||x.studentId)}</b><div class="muted">Class ${escapeHtml(x.class||"-")}${x.section?" · "+escapeHtml(x.section):""} · Stop ${escapeHtml(x.stop||"Not assigned")}</div><div class="muted">Date: ${escapeHtml(x.date)} · ${x.requestedAt?formatAttendanceTime(x.requestedAt):""}</div><div style="margin:9px 0;padding:10px;background:#f7f9fc;border-radius:9px"><b>Reason:</b> ${escapeHtml(x.reason||"No reason provided")}</div><span class="pill">${status}</span> ${actions}</div>`;
+  }).join("");
+ });
+}
+async function updateLeaveRequest(studentId,date,status){
+ await update(ref(db,`leaveRequests/${studentId}/${date}`),{status,decidedAt:Date.now(),decidedBy:currentUser?.name||"Teacher"});
+}
+function escapeHtml(value){
+ return String(value).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+function enableNotifications(){if("Notification"in window)Notification.requestPermission().then(()=>alert("Notifications enabled."))}
+async function sendEmergency(type){
+ const bus=currentBus||"unassigned";
+ const message=type==="student"?"Student requested emergency assistance.":"Driver requested emergency assistance.";
+ await set(ref(db,"emergencies/"+Date.now()),{type,userId:currentUser.id,userName:currentUser.name,busId:bus,message,time:Date.now(),latitude:window.driverPosition?.latitude||null,longitude:window.driverPosition?.longitude||null});
+ if(type==="student")studentAlerts.innerHTML='<div class="alert-card emergency"><b>🚨 Emergency sent</b><br>School transport control has been notified.</div>'+studentAlerts.innerHTML;
+ alert("🚨 Emergency notification sent to school admin.");
+}
+function watchStudentAlerts(){
+ if(!currentBus)return;
+ alertUnsub=onValue(ref(db,"emergencies"),snap=>{
+  const d=snap.val()||{};const mine=Object.values(d).filter(x=>x.busId===currentBus).sort((a,b)=>(b.time||0)-(a.time||0)).slice(0,5);
+  studentAlerts.innerHTML=mine.map(x=>`<div class="alert-card emergency"><b>🚨 ${x.type||"Emergency"}</b><br>${x.message||""}<br><small>${new Date(x.time).toLocaleString()}</small></div>`).join("")||'<p class="muted">No alerts.</p>';
+ });
+}
+window.chooseRole=chooseRole;window.login=login;window.logout=logout;window.adminTab=adminTab;window.addStudent=addStudent;window.addDriver=addDriver;window.addBus=addBus;window.enableStopMode=enableStopMode;window.enableDriverStopMode=enableDriverStopMode;window.saveRoute=saveRoute;window.saveDriverRoute=saveDriverRoute;window.clearStops=clearStops;window.loadAttendance=loadAttendance;window.markAttendance=markAttendance;window.startTrip=startTrip;window.endTrip=endTrip;window.centerDriver=centerDriver;window.studentChooseStop=studentChooseStop;window.studentBoardBus=studentBoardBus;window.studentNotComing=studentNotComing;window.studentResetStatus=studentResetStatus;window.sendLeaveRequest=sendLeaveRequest;window.updateLeaveRequest=updateLeaveRequest;window.enableNotifications=enableNotifications;window.sendEmergency=sendEmergency;
+</script>
+</body>
+</html>
