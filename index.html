@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Smart School Bus</title>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:Arial,sans-serif}
+body{background:#eef4ff;color:#17243d}
+button{border:0;padding:12px 16px;border-radius:10px;background:#1264f5;color:white;font-weight:bold;cursor:pointer;margin-top:8px}
+button:hover{background:#0754d5}
+.red{background:#e83447}.green{background:#20a95a}.orange{background:#f39a16}
+.hidden{display:none!important}
+.login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1264f5,#70a9ff)}
+.login-box{background:white;width:390px;max-width:92%;padding:30px;border-radius:22px;box-shadow:0 15px 45px #0004}
+.logo{text-align:center;font-size:55px}.login-box h1{text-align:center;margin:10px 0 5px}
+.subtitle{text-align:center;color:#718097;margin-bottom:25px}
+.role-buttons{display:flex;gap:10px;margin-bottom:18px}.role-buttons button{flex:1}
+.role-selected{background:#20a95a!important}
+input{width:100%;padding:13px;margin:7px 0;border:1px solid #d5ddeb;border-radius:9px;font-size:15px}
+.login-box .login-button{width:100%;margin-top:15px}
+.demo{margin-top:18px;background:#f2f6ff;padding:12px;border-radius:10px;font-size:12px;line-height:1.6}
+header{background:linear-gradient(135deg,#1264f5,#4b91ff);color:white;padding:17px 24px;display:flex;justify-content:space-between;align-items:center}
+header h1{font-size:23px}header p{opacity:.9;margin-top:4px}
+.live{background:#20d66b;padding:8px 13px;border-radius:20px;font-weight:bold}
+.container{max-width:1200px;margin:20px auto;padding:0 16px}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin-bottom:18px}
+.card{background:white;padding:18px;border-radius:16px;box-shadow:0 5px 18px #18345b18}
+.icon{font-size:27px}.label{font-size:12px;color:#718097;margin-top:7px}.value{font-size:20px;font-weight:bold;margin-top:5px}
+.content{display:grid;grid-template-columns:2fr 1fr;gap:18px}
+.mapbox{background:white;padding:8px;border-radius:18px;box-shadow:0 5px 18px #18345b18}
+#driverMap,#studentMap{height:600px;width:100%;border-radius:13px}
+.panel{background:white;padding:19px;border-radius:17px;box-shadow:0 5px 18px #18345b18;margin-bottom:15px}
+.panel h2{margin-bottom:13px}.status{padding:11px;background:#e8fff1;color:#079345;border-radius:9px;font-weight:bold}
+.info{color:#66758d;font-size:13px;line-height:1.5}
+.stop-item{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid #eee}
+.number{width:27px;height:27px;border-radius:50%;background:#1264f5;color:white;display:flex;align-items:center;justify-content:center;font-weight:bold}
+.stop-name{flex:1}footer{text-align:center;color:#69758b;padding:25px}
+.firebase-state{font-size:12px;margin-top:10px;color:#66758d}
+@media(max-width:850px){.cards{grid-template-columns:repeat(2,1fr)}.content{grid-template-columns:1fr}#driverMap,#studentMap{height:450px}}
+
+/* ===== FINAL MOBILE / MODERN UI ===== */
+:root{
+  --primary:#2563eb; --primary2:#4f46e5; --ink:#17243d;
+  --muted:#6b7a90; --surface:#fff; --bg:#f4f7fb;
+}
+body{background:linear-gradient(180deg,#eef4ff 0%,#f8fbff 100%);}
+header{box-shadow:0 8px 25px #19345b20;position:sticky;top:0;z-index:1000;}
+.card,.panel,.mapbox{border:1px solid #e5ebf5;box-shadow:0 8px 25px #18345b12;}
+.mapbox{padding:0;overflow:hidden;}
+#driverMap,#studentMap{height:600px!important;}
+.leaflet-control-zoom a{font-size:20px!important;}
+.data-form{display:grid;gap:8px;margin-top:10px;}
+.data-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.small-btn{padding:9px 11px;font-size:13px;margin-top:4px;}
+.route-badge{display:inline-block;padding:6px 10px;border-radius:999px;background:#eef4ff;color:#2563eb;font-size:12px;font-weight:700;margin:4px 0;}
+.live-dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#16c784;margin-right:6px;}
+@media(max-width:850px){
+  header{padding:13px 15px;}
+  header h1{font-size:19px;}
+  .container{padding:0 10px;margin:12px auto;}
+  .cards{gap:9px;}
+  .card{padding:13px;}
+  #driverMap,#studentMap{height:52vh!important;min-height:390px;}
+  .content{gap:10px;}
+  .panel{padding:14px;}
+  button{padding:11px 13px;}
+}
+
+
+/* ===== LANDMARKS ===== */
+.landmark-control{
+  background:#fff;border-radius:10px;padding:8px 10px;
+  box-shadow:0 2px 10px #0002;font-size:13px;
+}
+.landmark-legend{
+  line-height:1.8;background:#fff;padding:8px 10px;border-radius:10px;
+  box-shadow:0 2px 10px #0002;font-size:12px;
+}
+
+</style>
+</head>
+
+<body>
+<div id="loginScreen" class="login-screen">
+  <div class="login-box">
+    <div class="logo">🚌</div>
+    <h1>Smart School Bus</h1>
+    <p class="subtitle">School Transport Management</p>
+    <div class="role-buttons">
+      <button id="studentRole" onclick="selectRole('student')">🧑‍🎓 Student</button>
+      <button id="driverRole" onclick="selectRole('driver')">🧑‍✈️ Driver</button>
+    </div>
+    <input id="username" placeholder="Username">
+    <input id="password" type="password" placeholder="Password">
+    <button class="login-button" onclick="login()">🔐 Login</button>
+    <p id="loginMessage" style="color:#e83447;font-size:13px;margin-top:10px;text-align:center;"></p>
+    <div class="demo">
+      <strong>Exhibition Demo Accounts</strong><br>
+      🧑‍✈️ Driver: driver01 / 1234<br>
+      🧑‍🎓 Student: student01 / 1234
+    </div>
+  </div>
+</div>
+
+<div id="app" class="hidden">
+<header>
+  <div>
+    <h1>🚌 Smart School Bus</h1>
+    <p id="headerSubtitle">School Transport System</p>
+  </div>
+  <div>
+    <span class="live">● LIVE</span>
+    <button onclick="logout()" style="background:#ffffff22;margin-left:7px;">Logout</button>
+  </div>
+</header>
+
+<div class="container">
+<div id="driverDashboard" class="hidden">
+  <div class="cards">
+    <div class="card"><div class="icon">🚌</div><div class="label">BUS</div><div class="value">BUS-08</div></div>
+    <div class="card"><div class="icon">📍</div><div class="label">STOPS</div><div class="value" id="driverStops">0</div></div>
+    <div class="card"><div class="icon">🛰️</div><div class="label">GPS</div><div class="value" id="gpsStatus">OFF</div></div>
+    <div class="card"><div class="icon">👥</div><div class="label">STUDENTS</div><div class="value">32/40</div></div>
+  </div>
+
+  <div class="content">
+    <div class="mapbox"><div id="driverMap"></div></div>
+    <div>
+      <div class="panel">
+        <h2>🧑‍✈️ Driver Control</h2>
+        <p><strong>Driver:</strong> Mr. Sharma</p>
+        <p style="margin-top:8px"><strong>Bus:</strong> BUS-08</p>
+        <div id="driverStatus" class="status" style="margin-top:14px">● Trip not started</div>
+        <button class="green" onclick="startDriverGPS()">🟢 Start Trip</button>
+        <button onclick="centerDriver()">🎯 Find Bus</button>
+        <button class="red" onclick="driverEmergency()">🚨 Emergency</button>
+        <button class="orange" onclick="stopDriverGPS()">🔴 End Trip</button>
+        <div id="firebaseDriverState" class="firebase-state">Firebase: connecting...</div>
+      </div>
+
+      <div class="panel">
+        <h2>📍 Route Setup</h2>
+        <p class="info">Click on the map to create stops.<br><br>Each stop will be added to the route.</p>
+        <button onclick="addDriverStop()">➕ Add Stop</button>
+        <button onclick="saveDriverRoute()">💾 Save Route</button>
+        <button onclick="loadDriverRoute()">📂 Load Route</button>
+      </div>
+
+      <div class="panel">
+        <h2>📍 Stops</h2>
+        <div id="driverStopList"><p class="info">No stops yet.</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="studentDashboard" class="hidden">
+  <div class="cards">
+    <div class="card"><div class="icon">🚌</div><div class="label">BUS</div><div class="value">BUS-08</div></div>
+    <div class="card"><div class="icon">🟢</div><div class="label">STATUS</div><div class="value" id="studentBusStatus">Waiting</div></div>
+    <div class="card"><div class="icon">📍</div><div class="label">MY STOP</div><div class="value">My Stop</div></div>
+    <div class="card"><div class="icon">⏱️</div><div class="label">DISTANCE</div><div class="value" id="studentDistance">-</div></div>
+  </div>
+
+  <div class="content">
+    <div class="mapbox"><div id="studentMap"></div></div>
+    <div>
+      <div class="panel">
+        <h2>🧑‍🎓 Student Dashboard</h2>
+        <p><strong>Student:</strong> Rahul</p>
+        <p style="margin-top:8px"><strong>Class:</strong> 8</p>
+        <div class="status" style="margin-top:15px" id="studentStatus">● Waiting for bus</div>
+        <br>
+        <p><strong>Next Stop:</strong></p>
+        <p id="studentNextStop" style="margin-top:7px;font-weight:bold;">-</p>
+        <p style="margin-top:15px"><strong>Bus Distance:</strong></p>
+        <p id="studentBusDistance" style="margin-top:7px;font-weight:bold;">-</p>
+        <div id="firebaseStudentState" class="firebase-state">Firebase: connecting...</div>
+      </div>
+
+      <div class="panel">
+        <h2>📍 My Route</h2>
+        <div id="studentStopList"><p class="info">No route loaded.</p></div>
+      </div>
+
+      <div class="panel">
+        <h2>🔔 Alerts</h2>
+        <p class="info" id="studentNotification">No new alerts.</p>
+        <button onclick="studentNotify()">🔔 Enable Alerts</button>
+        <button class="red" onclick="studentEmergency()">🚨 Emergency</button>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<footer>
+Smart School Bus Tracker<br>
+Class 8 Exhibition Project<br>
+Map data © OpenStreetMap contributors © CARTO
+</footer>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
+import { getDatabase, ref, set, update, onValue, get }
+  from "https://www.gstatic.com/firebasejs/12.18.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCMx0gcalF6GlWr4nuwEzAqRPtxczfKz7w",
+  authDomain: "school-bus-tracker-1a44a.firebaseapp.com",
+  databaseURL: "https://school-bus-tracker-1a44a-default-rtdb.firebaseio.com",
+  projectId: "school-bus-tracker-1a44a",
+  storageBucket: "school-bus-tracker-1a44a.firebasestorage.app",
+  messagingSenderId: "212649607872",
+  appId: "1:212649607872:web:8c6dbbc82d36002fd96325",
+  measurementId: "G-LLCZQ1BE2E"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+let selectedRole=null, driverMap=null, studentMap=null;
+let driverBusMarker=null, studentBusMarker=null;
+let driverGPSWatch=null, driverPosition=null;
+let stops=[], driverMarkers=[], studentMarkers=[];
+let driverRoute=null, studentRoute=null;
+let studentTripUnsubscribe=null, studentRouteUnsubscribe=null;
+let studentNextStopIndex=0;
+let studentPositionInitialized=false;
+let driverRouteRequestId=0, studentRouteRequestId=0;
+
+const busIcon=L.divIcon({
+  html:'<div style="font-size:35px">🚌</div>',
+  className:"",
+  iconSize:[40,40],
+  iconAnchor:[20,20]
+});
+
+function setFirebaseState(id,text){
+  const el=document.getElementById(id);
+  if(el) el.innerText=text;
+}
+
+function selectRole(role){
+  selectedRole=role;
+  document.getElementById("studentRole").classList.remove("role-selected");
+  document.getElementById("driverRole").classList.remove("role-selected");
+  document.getElementById(role==="student"?"studentRole":"driverRole").classList.add("role-selected");
+}
+
+function login(){
+  const username=document.getElementById("username").value.trim();
+  const password=document.getElementById("password").value;
+  const message=document.getElementById("loginMessage");
+
+  if(!selectedRole){ message.innerText="Please choose Student or Driver."; return; }
+
+  if(selectedRole==="driver" && username==="driver01" && password==="1234"){ openDriver(); return; }
+  if(selectedRole==="student" && username==="student01" && password==="1234"){ openStudent(); return; }
+
+  message.innerText="❌ Incorrect username or password.";
+}
+
+function openDriver(){
+  document.getElementById("loginScreen").classList.add("hidden");
+  document.getElementById("app").classList.remove("hidden");
+  document.getElementById("driverDashboard").classList.remove("hidden");
+  document.getElementById("studentDashboard").classList.add("hidden");
+  document.getElementById("headerSubtitle").innerText="Driver Control Panel";
+  setTimeout(()=>{ initializeDriverMap(); initPeople(); addLandmarkControl(driverMap,refreshDriverLandmarks); setTimeout(refreshDriverLandmarks,500); },200);
+  setFirebaseState("firebaseDriverState","Firebase: connected");
+}
+
+function openStudent(){
+  document.getElementById("loginScreen").classList.add("hidden");
+  document.getElementById("app").classList.remove("hidden");
+  document.getElementById("driverDashboard").classList.add("hidden");
+  document.getElementById("studentDashboard").classList.remove("hidden");
+  document.getElementById("headerSubtitle").innerText="Student Bus Tracking";
+  setTimeout(()=>{ initializeStudentMap(); startStudentRealtime(); addLandmarkControl(studentMap,refreshStudentLandmarks); setTimeout(refreshStudentLandmarks,500); },200);
+}
+
+function logout(){
+  stopDriverGPS(false);
+  if(studentTripUnsubscribe){ studentTripUnsubscribe(); studentTripUnsubscribe=null; }
+  if(studentRouteUnsubscribe){ studentRouteUnsubscribe(); studentRouteUnsubscribe=null; }
+
+  document.getElementById("app").classList.add("hidden");
+  document.getElementById("loginScreen").classList.remove("hidden");
+  document.getElementById("username").value="";
+  document.getElementById("password").value="";
+}
+
+function initializeDriverMap(){
+  if(driverMap){ driverMap.invalidateSize(); return; }
+
+  driverMap=L.map("driverMap").setView([19.1860,73.1860],14);
+  L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",{
+    maxZoom:19, attribution:"© OpenStreetMap contributors © CARTO"
+  }).addTo(driverMap);
+
+  driverMap.on("click",addStopFromMap);
+  drawDriverStops();
+  loadRouteFromFirebase();
+}
+
+function initializeStudentMap(){
+  if(studentMap){ studentMap.invalidateSize(); startStudentListeners(); return; }
+
+  studentMap=L.map("studentMap").setView([19.1860,73.1860],14);
+  L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",{
+    maxZoom:19, attribution:"© OpenStreetMap contributors © CARTO"
+  }).addTo(studentMap);
+
+  startStudentListeners();
+}
+
+function startStudentListeners(){
+  if(studentTripUnsubscribe) studentTripUnsubscribe();
+  if(studentRouteUnsubscribe) studentRouteUnsubscribe();
+
+  studentTripUnsubscribe=onValue(ref(db,"trips/BUS-08"),snapshot=>{
+    const data=snapshot.val();
+
+    if(!data || data.status!=="started" ||
+       typeof data.latitude!=="number" ||
+       typeof data.longitude!=="number"){
+
+      if(studentBusMarker){
+        studentMap.removeLayer(studentBusMarker);
+        studentBusMarker=null;
+      }
+
+      document.getElementById("studentBusStatus").innerText="Waiting";
+      document.getElementById("studentStatus").innerText="● Waiting for bus";
+      document.getElementById("studentNextStop").innerText="-";
+      document.getElementById("studentDistance").innerText="-";
+      document.getElementById("studentBusDistance").innerText="-";
+      studentNextStopIndex=0;
+      studentPositionInitialized=false;
+      updateStudentNextStopPreview();
+      setFirebaseState("firebaseStudentState","Firebase: connected • Trip not started");
+      return;
+    }
+
+    const position={
+      lat:data.latitude,
+      lng:data.longitude,
+      accuracy:data.accuracy||0
+    };
+
+    if(!studentBusMarker){
+      studentBusMarker=L.marker([position.lat,position.lng],{icon:busIcon}).addTo(studentMap);
+      studentBusMarker.bindPopup("<b>🚌 BUS-08</b><br>Live Bus");
+    }else{
+      studentBusMarker.setLatLng([position.lat,position.lng]);
+    }
+
+    document.getElementById("studentBusStatus").innerText="LIVE";
+    document.getElementById("studentStatus").innerText="🟢 Bus is live";
+    setFirebaseState("firebaseStudentState","Firebase: LIVE • Bus location updating");
+    findStudentNextStop(position);
+
+    if(!studentMap.getBounds().pad(-0.15).contains([position.lat,position.lng])){
+      studentMap.panTo([position.lat,position.lng],{animate:true,duration:0.5});
+    }
+  });
+
+  studentRouteUnsubscribe=onValue(ref(db,"routes/BUS-08"),snapshot=>{
+    const data=snapshot.val();
+    if(data && Array.isArray(data.stops)) stops=data.stops;
+    else stops=[];
+    studentNextStopIndex=0;
+    studentPositionInitialized=false;
+    drawStudentStops();
+    updateStopLists();
+  });
+}
+
+function addStopFromMap(e){
+  const name=prompt("Enter bus stop name:");
+  if(!name) return;
+
+  stops.push({name:name.trim(),lat:e.latlng.lat,lng:e.latlng.lng});
+  studentNextStopIndex=0;
+  studentPositionInitialized=false;
+  drawDriverStops();
+  drawStudentStops();
+  updateStopLists();
+  saveRouteAutomatically(); if(db) saveRouteToFirebase();
+}
+
+function addDriverStop(){ alert("Click anywhere on the map to add a bus stop."); }
+
+async function getRoadRoute(){
+  if(stops.length<2) return null;
+
+  const coords=stops.map(s=>`${s.lng},${s.lat}`).join(";");
+  const url=`https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson&steps=false`;
+
+  try{
+    const response=await fetch(url);
+    if(!response.ok) throw new Error(`Routing server returned ${response.status}`);
+    const data=await response.json();
+    if(data.code!=="Ok" || !data.routes || !data.routes[0]) throw new Error("No road route found");
+    return data.routes[0].geometry;
+  }catch(error){
+    console.error("Road routing failed:",error);
+    return null;
+  }
+}
+
+async function drawRoadRoute(map,type){
+  if(!map || stops.length<2) return;
+
+  const request = type==="driver" ? ++driverRouteRequestId : ++studentRouteRequestId;
+  const geometry=await getRoadRoute();
+  const currentRequest = type==="driver" ? driverRouteRequestId : studentRouteRequestId;
+  if(request!==currentRequest || !map) return;
+
+  const oldLayer=type==="driver" ? driverRoute : studentRoute;
+  if(oldLayer) map.removeLayer(oldLayer);
+
+  if(geometry){
+    const layer=L.geoJSON(geometry,{
+      style:{color:"#1264f5",weight:6,opacity:0.9}
+    }).addTo(map);
+    if(type==="driver") driverRoute=layer;
+    else studentRoute=layer;
+  }else{
+    // Fallback if the routing service is temporarily unavailable.
+    const layer=L.polyline(stops.map(s=>[s.lat,s.lng]),{
+      color:"#1264f5",weight:5,dashArray:"8 8",opacity:0.75
+    }).addTo(map);
+    if(type==="driver") driverRoute=layer;
+    else studentRoute=layer;
+  }
+}
+
+function drawDriverStops(){
+  if(!driverMap) return;
+
+  driverMarkers.forEach(m=>driverMap.removeLayer(m));
+  driverMarkers=[];
+
+  stops.forEach((stop,index)=>{
+    const marker=L.marker([stop.lat,stop.lng]).addTo(driverMap);
+    marker.bindPopup("<b>🛑 Stop "+(index+1)+"</b><br>"+escapeHtml(stop.name));
+    driverMarkers.push(marker);
+  });
+
+  if(driverRoute){ driverMap.removeLayer(driverRoute); driverRoute=null; }
+  drawRoadRoute(driverMap,"driver");
+}
+
+function drawStudentStops(){
+  if(!studentMap) return;
+
+  studentMarkers.forEach(m=>studentMap.removeLayer(m));
+  studentMarkers=[];
+
+  stops.forEach((stop,index)=>{
+    const marker=L.marker([stop.lat,stop.lng]).addTo(studentMap);
+    marker.bindPopup("<b>🛑 Stop "+(index+1)+"</b><br>"+escapeHtml(stop.name));
+    studentMarkers.push(marker);
+  });
+
+  if(studentRoute){ studentMap.removeLayer(studentRoute); studentRoute=null; }
+  drawRoadRoute(studentMap,"student");
+
+  updateStudentNextStopPreview();
+}
+
+function updateStopLists(){
+  document.getElementById("driverStops").innerText=stops.length;
+  const driverList=document.getElementById("driverStopList");
+  const studentList=document.getElementById("studentStopList");
+
+  if(stops.length===0){
+    driverList.innerHTML='<p class="info">No stops yet.</p>';
+    studentList.innerHTML='<p class="info">No route loaded.</p>';
+    return;
+  }
+
+  let html="";
+  stops.forEach((stop,index)=>{
+    html+=`<div class="stop-item"><div class="number">${index+1}</div><div class="stop-name">${escapeHtml(stop.name)}</div></div>`;
+  });
+
+  driverList.innerHTML=html;
+  studentList.innerHTML=html;
+}
+
+function escapeHtml(value){
+  return String(value).replace(/[&<>"']/g,char=>({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+  }[char]));
+}
+
+function startDriverGPS(){
+  if(!navigator.geolocation){
+    alert("GPS is not supported by this browser.");
+    return;
+  }
+
+  if(driverGPSWatch!==null) return;
+  if(!driverMap) initializeDriverMap();
+
+  document.getElementById("driverStatus").innerText="🛰️ Getting GPS location...";
+  document.getElementById("gpsStatus").innerText="STARTING";
+
+  update(ref(db,"trips/BUS-08"),{
+    status:"started",driverId:"driver01",busId:"BUS-08",updatedAt:Date.now()
+  }).catch(error=>{
+    console.error(error);
+    alert("Firebase error: "+error.message);
+  });
+
+  driverGPSWatch=navigator.geolocation.watchPosition(
+    async position=>{
+      const lat=position.coords.latitude;
+      const lng=position.coords.longitude;
+      const accuracy=position.coords.accuracy;
+      driverPosition={lat,lng,accuracy};
+
+      if(!driverBusMarker){
+        driverBusMarker=L.marker([lat,lng],{icon:busIcon}).addTo(driverMap);
+        driverBusMarker.bindPopup("<b>🚌 BUS-08</b><br>Real GPS Location");
+      }else{
+        driverBusMarker.setLatLng([lat,lng]);
+      }
+
+      document.getElementById("gpsStatus").innerText="LIVE";
+      document.getElementById("driverStatus").innerText="🟢 GPS LIVE ±"+Math.round(accuracy)+"m";
+      setFirebaseState("firebaseDriverState","Firebase: LIVE • Location sent");
+
+      try{
+        await update(ref(db,"trips/BUS-08"),{
+          status:"started",
+          driverId:"driver01",
+          busId:"BUS-08",
+          latitude:lat,
+          longitude:lng,
+          accuracy:accuracy,
+          updatedAt:Date.now()
+        });
+      }catch(error){
+        console.error("Firebase location update failed:",error);
+        document.getElementById("driverStatus").innerText="⚠️ GPS LIVE • Firebase error";
+      }
+    },
+    error=>{
+      console.error("GPS error:",error);
+      document.getElementById("driverStatus").innerText="❌ GPS Error: "+error.message;
+      document.getElementById("gpsStatus").innerText="ERROR";
+    },
+    {enableHighAccuracy:true,maximumAge:2000,timeout:15000}
+  );
+}
+
+function stopDriverGPS(writeTripStatus=true){
+  if(driverGPSWatch!==null){
+    navigator.geolocation.clearWatch(driverGPSWatch);
+    driverGPSWatch=null;
+  }
+
+  document.getElementById("gpsStatus").innerText="OFF";
+
+  if(writeTripStatus){
+    update(ref(db,"trips/BUS-08"),{
+      status:"ended",updatedAt:Date.now()
+    }).then(()=>{
+      document.getElementById("driverStatus").innerText="🔴 Trip ended";
+      setFirebaseState("firebaseDriverState","Firebase: connected • Trip ended");
+    }).catch(error=>{
+      console.error(error);
+      document.getElementById("driverStatus").innerText="⚠️ Trip ended locally";
+    });
+  }else{
+    document.getElementById("driverStatus").innerText="● Trip not started";
+  }
+}
+
+function centerDriver(){
+  if(!driverBusMarker){ alert("Start the trip first."); return; }
+  driverMap.setView(driverBusMarker.getLatLng(),18);
+}
+
+function updateStudentNextStopPreview(){
+  if(stops.length===0){
+    document.getElementById("studentNextStop").innerText="-";
+    return;
+  }
+
+  if(studentNextStopIndex<0 || studentNextStopIndex>=stops.length){
+    studentNextStopIndex=0;
+  }
+
+  document.getElementById("studentNextStop").innerText=stops[studentNextStopIndex].name;
+}
+
+function findStudentNextStop(position){
+  if(stops.length===0) return;
+
+  // First choose the closest stop when the trip begins. This also handles
+  // opening the app after the bus has already passed some stops.
+  if(!studentPositionInitialized){
+    let nearestIndex=0, shortest=Infinity;
+    stops.forEach((stop,index)=>{
+      const d=distance(position.lat,position.lng,stop.lat,stop.lng);
+      if(d<shortest){ shortest=d; nearestIndex=index; }
+    });
+    studentNextStopIndex=nearestIndex;
+    studentPositionInitialized=true;
+  }
+
+  // When the bus reaches the current target stop, automatically move to the
+  // following stop in the driver's saved order.
+  let target=stops[studentNextStopIndex];
+  let targetDistance=distance(position.lat,position.lng,target.lat,target.lng);
+
+  if(targetDistance<=120 && studentNextStopIndex<stops.length-1){
+    studentNextStopIndex++;
+    target=stops[studentNextStopIndex];
+    targetDistance=distance(position.lat,position.lng,target.lat,target.lng);
+  }
+
+  document.getElementById("studentNextStop").innerText=target.name;
+  document.getElementById("studentDistance").innerText=formatDistance(targetDistance);
+  document.getElementById("studentBusDistance").innerText=formatDistance(targetDistance);
+}
+
+function distance(lat1,lon1,lat2,lon2){
+  const R=6371000;
+  const dLat=(lat2-lat1)*Math.PI/180;
+  const dLon=(lon2-lon1)*Math.PI/180;
+  const a=
+    Math.sin(dLat/2)*Math.sin(dLat/2)+
+    Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*
+    Math.sin(dLon/2)*Math.sin(dLon/2);
+  const c=2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+  return R*c;
+}
+
+function formatDistance(d){
+  if(d<1000) return Math.round(d)+" m";
+  return (d/1000).toFixed(2)+" km";
+}
+
+async function saveRouteAutomatically(){
+  try{
+    await set(ref(db,"routes/BUS-08"),{stops:stops,updatedAt:Date.now()});
+    localStorage.setItem("schoolBusRoute",JSON.stringify(stops));
+    alert("🔥 Route saved to Firebase!");
+  }catch(error){
+    console.error(error);
+    localStorage.setItem("schoolBusRoute",JSON.stringify(stops));
+    alert("⚠️ Firebase route save failed. Local copy saved.");
+  }
+}
+
+async function saveRouteToFirebase(){ if(!db) return; await set(ref(db,"routes/BUS-08"),{stops,updatedAt:Date.now()}); }
+
+function saveDriverRoute(){ saveRouteAutomatically(); }
+
+async function loadRouteFromFirebase(){
+  try{
+    const snapshot=await get(ref(db,"routes/BUS-08"));
+    const data=snapshot.val();
+
+    if(data && Array.isArray(data.stops)){
+      stops=data.stops;
+      updateStopLists();
+      drawDriverStops();
+      setFirebaseState("firebaseDriverState","Firebase: connected • Route loaded");
+      return;
+    }
+  }catch(error){
+    console.error("Firebase route load failed:",error);
+  }
+
+  loadSavedRoute(); if(db) startFirebaseRouteSync();
+  drawDriverStops();
+  updateStopLists();
+}
+
+function loadSavedRoute(){
+  const saved=localStorage.getItem("schoolBusRoute");
+  if(saved){
+    try{ stops=JSON.parse(saved); }catch{ stops=[]; }
+  }
+  updateStopLists();
+}
+
+function loadDriverRoute(){
+  loadRouteFromFirebase().then(()=>{
+    drawDriverStops();
+    drawStudentStops();
+    alert("📂 Route loaded!");
+  });
+}
+
+function driverEmergency(){
+  let location="Unknown";
+  if(driverPosition) location=driverPosition.lat.toFixed(6)+", "+driverPosition.lng.toFixed(6);
+
+  alert("🚨 EMERGENCY\n\nBus: BUS-08\nDriver: Mr. Sharma\n\nGPS:\n"+location+"\n\nDemo emergency alert.");
+}
+
+function studentEmergency(){
+  alert("🚨 EMERGENCY\n\nThe school transport control would be contacted in a real system.");
+}
+
+function studentNotify(){
+  if("Notification" in window) Notification.requestPermission();
+  document.getElementById("studentNotification").innerText="🔔 Bus arrival alerts enabled.";
+}
+
+window.selectRole=selectRole;
+window.login=login;
+window.logout=logout;
+window.addDriverStop=addDriverStop;
+window.saveDriverRoute=saveDriverRoute;
+window.loadDriverRoute=loadDriverRoute;
+window.startDriverGPS=startDriverGPS;
+window.stopDriverGPS=stopDriverGPS;
+window.centerDriver=centerDriver;
+window.driverEmergency=driverEmergency;
+window.studentEmergency=studentEmergency;
+window.studentNotify=studentNotify;
+
+console.log("🔥 Firebase + Smart School Bus loaded successfully!");
+</script>
+</body>
+</html>
